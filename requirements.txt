@@ -1,0 +1,5 @@
+Django>=5.1
+djangorestframework
+opencv-python
+pytesseract
+Pillow

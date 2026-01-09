@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Safety - Sign Up</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 450px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; }
+        form { display: flex; flex-direction: column; }
+        label { font-weight: bold; margin-bottom: 5px; color: #555; }
+        input { margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        
+        .btn-group { display: flex; flex-direction: column; gap: 10px; }
+        
+        button { padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; transition: background 0.3s; }
+        
+        #verify-btn { background: #007bff; color: white; }
+        #verify-btn:hover { background: #0056b3; }
+        
+        #signup-btn { background: #28a745; color: white; }
+        #signup-btn:hover { background: #218838; }
+        #signup-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        .links { text-align: center; margin-top: 20px; }
+        .links a { color: #007bff; text-decoration: none; }
+        .error { color: red; margin-bottom: 15px; }
+        .success { color: green; margin-bottom: 15px; display: none; }
+        
+        .password-wrapper { position: relative; width: 100%; margin-bottom: 15px; }
+        .password-wrapper input { width: 100%; box-sizing: border-box; padding-right: 40px; margin-bottom: 0; }
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #666;
+            display: flex;
+            align-items: center;
+        }
+        .toggle-password svg { width: 20px; height: 20px; }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin: 0 auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Campus Safety Sign Up</h1>
+        
+        <form method="post" id="signup-form" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- Hidden field to store enrollment after verification -->
+            <input type="hidden" name="enrollment_number" id="id_enrollment_number">
+            <input type="hidden" name="identity_hash" id="id_identity_hash">
+            
+            <!-- Username -->
+            <label for="id_username">Username</label>
+            {{ form.username }}
+
+            <!-- Email -->
+            <label for="id_email">Email</label>
+            {{ form.email }}
+            
+            <!-- ID Card Upload -->
+            <label for="id_card_image">Upload Student ID Card</label>
+            <input type="file" id="id_card_image" name="id_card_image" accept="image/*" required>
+            <small style="color: #666; display: block; margin-top: -10px; margin-bottom: 15px;">Accepted formats: JPG, PNG, JPEG</small>
+            
+            <div id="verify-message" style="margin-bottom: 10px; font-weight: bold;"></div>
+            <div class="loader" id="loader"></div>
+            
+            <button type="button" id="verify-btn" onclick="verifyId()">Verify Now</button>
+            <br>
+            
+            <!-- Password Fields -->
+            <label for="id_password1">Password</label>
+            <div class="password-wrapper">
+                {{ form.password1 }}
+                <span class="toggle-password" onclick="togglePassword('id_password1', this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </span>
+            </div>
+            
+            <label for="id_password2">Confirm Password</label>
+            <div class="password-wrapper">
+                {{ form.password2 }}
+                <span class="toggle-password" onclick="togglePassword('id_password2', this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </span>
+            </div>
+
+            {% if form.errors %}
+                <div class="error">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <button type="submit" id="signup-btn" disabled>Sign Up</button>
+        </form>
+        
+        <div class="links">
+            <a href="{% url 'login' %}">Already have an account? Login</a>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword(fieldId, iconData) {
+            const field = document.getElementById(fieldId);
+            const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
+            field.setAttribute('type', type);
+            
+            // Toggle Icon
+            if (type === 'text') {
+                // Show Slash Icon
+                iconData.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M1 1l22 22"></path><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path></svg>';
+            } else {
+                // Show Eye Icon
+                iconData.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+            }
+        }
+
+        async function verifyId() {
+            const fileInput = document.getElementById('id_card_image');
+            const messageDiv = document.getElementById('verify-message');
+            const loader = document.getElementById('loader');
+            const verifyBtn = document.getElementById('verify-btn');
+            const signupBtn = document.getElementById('signup-btn');
+            const enrollmentInput = document.getElementById('id_enrollment_number');
+
+            if (!fileInput.files[0]) {
+                alert("Please upload an ID card image first.");
+                return;
+            }
+
+            // UI Loading State
+            verifyBtn.disabled = true;
+            verifyBtn.innerText = "Verifying...";
+            loader.style.display = "block";
+            messageDiv.innerText = "";
+            messageDiv.className = "";
+
+            const formData = new FormData();
+            formData.append('id_image', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/api/verification/inspect-id/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.valid) {
+                    messageDiv.innerText = `✅ Verified! College: ${data.college}, Enrollment: ${data.enrollment}`;
+                    messageDiv.className = "success";
+                    messageDiv.style.display = "block";
+                    messageDiv.style.color = "green";
+                    
+                    // Enable Sign Up
+                    signupBtn.disabled = false;
+                    enrollmentInput.value = data.enrollment;
+                    document.getElementById('id_identity_hash').value = data.identity_hash;
+                    
+                    // Disable verify button to lock it in? Or allow re-verify?  
+                    // User said "once verification is done... signup button will be available"
+                    verifyBtn.innerText = "Verified";
+                } else {
+                    messageDiv.innerText = `❌ Verification Failed: ${data.message}`;
+                    messageDiv.className = "error";
+                    messageDiv.style.display = "block";
+                    messageDiv.style.color = "red";
+                    signupBtn.disabled = true;
+                    enrollmentInput.value = "";
+                    verifyBtn.disabled = false;
+                    verifyBtn.innerText = "Verify Now";
+                }
+            } catch (error) {
+                console.error(error);
+                messageDiv.innerText = "❌ Error connecting to server.";
+                messageDiv.className = "error";
+                messageDiv.style.display = "block";
+                messageDiv.style.color = "red";
+                verifyBtn.disabled = false;
+                verifyBtn.innerText = "Verify Now";
+            } finally {
+                loader.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>

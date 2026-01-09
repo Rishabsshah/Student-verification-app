@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Safety - Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; }
+        .user-info { background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 20px 0; }
+        .status { padding: 5px 10px; border-radius: 4px; color: white; }
+        .verified { background: #28a745; }
+        .review { background: #ffc107; color: black; }
+        .rejected { background: #dc3545; }
+        .actions { text-align: center; margin-top: 30px; }
+        .actions a { display: inline-block; margin: 0 10px; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; }
+        .actions a:hover { background: #0056b3; }
+        .logout { background: #6c757d; }
+        .logout:hover { background: #545b62; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Campus Safety Dashboard</h1>
+        <div class="user-info">
+            <h2>Welcome, {{ user.username }}!</h2>
+            <p><strong>Verification Status:</strong>
+                <span class="status {{ user.verification_status|lower }}">
+                    {{ user.verification_status }}
+                </span>
+            </p>
+            {% if user.enrollment_number %}
+                <p><strong>Enrollment Number:</strong> {{ user.enrollment_number }}</p>
+            {% endif %}
+        </div>
+
+        {% if user.verification_status == 'REVIEW' %}
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                <strong>Action Required:</strong> Your account is under review. Please upload your student ID for verification.
+            </div>
+        {% elif user.verification_status == 'REJECTED' %}
+            <div style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                <strong>Verification Failed:</strong> Your ID verification was rejected. Please contact support or try again.
+            </div>
+        {% endif %}
+
+        <div class="actions">
+            {% if user.verification_status != 'VERIFIED' %}
+                <a href="{% url 'verify_page' %}">Upload Student ID</a>
+            {% endif %}
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="logout" style="border:none; cursor:pointer; color:white; padding:10px 20px; border-radius:4px; font-size:16px;">Logout</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

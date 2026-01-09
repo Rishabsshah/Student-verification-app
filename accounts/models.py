@@ -30,7 +30,7 @@ class User(AbstractUser):
     # Verification status to control login access
     # Only VERIFIED students can log in
     verification_status = models.CharField(
-        max_length=10,
+        max_length=20,
         choices=VERIFICATION_STATUS_CHOICES,
         default='REVIEW',
         help_text="Current verification status of the student"

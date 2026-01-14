@@ -5,6 +5,297 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campus Safety - Sign Up</title>
     <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #f0f2f5; color: #333; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #1a73e8; margin-bottom: 25px; }
+        
+        .step-container { display: none; animation: fadeIn 0.5s; }
+        .step-container.active { display: block; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        label { font-weight: 600; margin-bottom: 8px; display: block; color: #555; }
+        input[type="text"], input[type="email"], input[type="password"], input[type="file"] { 
+            width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 20px; 
+            border: 1px solid #ddd; border-radius: 8px; font-size: 16px; transition: border 0.3s;
+        }
+        input:focus { border-color: #1a73e8; outline: none; }
+        
+        button { 
+            width: 100%; padding: 12px; border: none; border-radius: 8px; 
+            cursor: pointer; font-size: 16px; font-weight: bold; transition: background 0.3s, transform 0.1s; 
+            color: white; margin-top: 10px;
+        }
+        button:active { transform: scale(0.98); }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+
+        .btn-primary { background: #1a73e8; }
+        .btn-primary:hover { background: #1557b0; }
+        
+        .btn-success { background: #34a853; }
+        .btn-success:hover { background: #2d8d46; }
+
+        .links { text-align: center; margin-top: 25px; font-size: 14px; }
+        .links a { color: #1a73e8; text-decoration: none; }
+        
+        .message { margin-top: 15px; padding: 10px; border-radius: 6px; display: none; font-size: 14px; }
+        .message.error { background: #fce8e6; color: #d93025; border: 1px solid #fad2cf; }
+        .message.success { background: #e6f4ea; color: #1e8e3e; border: 1px solid #ceead6; }
+
+        /* Camera UI */
+        #camera-container { position: relative; width: 100%; height: 320px; background: #000; overflow: hidden; border-radius: 8px; margin-bottom: 15px; }
+        #video, #canvas { width: 100%; height: 100%; object-fit: cover; }
+        #canvas { display: none; }
+        
+        .overlay-instruction {
+            position: absolute; bottom: 20px; left: 0; right: 0; text-align: center;
+            color: white; text-shadow: 0 1px 4px rgba(0,0,0,0.8); font-size: 14px;
+        }
+
+        .loader {
+            border: 3px solid #f3f3f3; border-top: 3px solid #1a73e8; border-radius: 50%;
+            width: 20px; height: 20px; animation: spin 1s linear infinite;
+            display: inline-block; vertical-align: middle; margin-right: 8px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .password-wrapper { position: relative; margin-bottom: 20px; }
+        .password-wrapper input { margin-bottom: 0; padding-right: 40px; }
+        .toggle-password { position: absolute; right: 12px; top: 14px; cursor: pointer; color: #777; }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Student Registration</h1>
+        
+        <form method="post" id="signup-form" enctype="multipart/form-data">
+            {% csrf_token %}
+            <!-- Hidden Fields -->
+            <input type="hidden" name="enrollment_number" id="id_enrollment_number">
+            <input type="hidden" name="identity_hash" id="id_identity_hash">
+            
+            <!-- STEP 1: Basic Info (Moved from Page 1) -->
+            <div id="step-1" class="step-container active">
+                <h3 style="margin-top:0;">Step 2: Account Details</h3>
+                <p style="color: green; margin-bottom: 20px;">✅ ID Verified: <b id="display-enroll-init">Loading...</b></p>
+                
+                <label for="id_username">Username</label>
+                {{ form.username }}
+
+                <label for="id_email">Email</label>
+                {{ form.email }}
+                
+                <button type="button" class="btn-primary" onclick="goToSelfie()">Next: Selfie Check</button>
+            </div>
+
+            <!-- STEP 2: Selfie Verification -->
+            <div id="step-2" class="step-container">
+                <h3 style="margin-top:0;">Step 3: Selfie Check</h3>
+                <p style="font-size: 14px; color: #666; margin-bottom: 15px;">We need to verify that you match your ID card.</p>
+                
+                <div id="camera-container">
+                    <video id="video" autoplay playsinline></video>
+                    <canvas id="canvas"></canvas>
+                    <div class="overlay-instruction">Center your face in the frame</div>
+                </div>
+
+                <div id="msg-step2" class="message"></div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" id="btn-capture" class="btn-primary" onclick="captureAndVerify()">Capture & Verify</button>
+                    <button type="button" id="btn-retake" class="btn-primary" style="background:#555; display:none;" onclick="startCamera()">Retake</button>
+                </div>
+            </div>
+
+            <!-- STEP 3: Password & Submit -->
+            <div id="step-3" class="step-container">
+                <h3 style="margin-top:0;">Step 4: Secure Account</h3>
+                <div class="message success" style="display:block; margin-bottom: 20px;">
+                    ✅ Verification Complete!<br>
+                    Enrollment: <b id="display-enroll"></b>
+                </div>
+
+                <label for="id_password1">Password</label>
+                <div class="password-wrapper">
+                    {{ form.password1 }}
+                    <span class="toggle-password" onclick="togglePassword('id_password1', this)">👁️</span>
+                </div>
+                
+                <label for="id_password2">Confirm Password</label>
+                <div class="password-wrapper">
+                    {{ form.password2 }}
+                    <span class="toggle-password" onclick="togglePassword('id_password2', this)">👁️</span>
+                </div>
+
+                {% if form.errors %}
+                    <div class="message error" style="display:block;">
+                        {% for field in form %}
+                            {% for error in field.errors %} {{ error }}<br> {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %} {{ error }}<br> {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <button type="submit" id="signup-btn" class="btn-success">Create Account</button>
+            </div>
+        </form>
+        
+        <div class="links">
+            <a href="{% url 'login' %}">Already have an account? Login</a>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let idCardToken = null;
+        let stream = null;
+
+        // On Load: Check URL Params
+        window.onload = function() {
+            const params = new URLSearchParams(window.location.search);
+            const enrollment = params.get('enrollment');
+            const hash = params.get('hash');
+            const token = params.get('token');
+
+            if (enrollment && hash && token) {
+                // Pre-fill
+                document.getElementById('id_enrollment_number').value = enrollment;
+                document.getElementById('display-enroll-init').innerText = enrollment;
+                document.getElementById('display-enroll').innerText = enrollment;
+                document.getElementById('id_identity_hash').value = hash;
+                idCardToken = token;
+            } else {
+                // Redirect back to ID Verification if missing?
+                // For now, clean UI, maybe user manually navigated.
+                 document.getElementById('display-enroll-init').innerText = "Not Verified (Please go back)";
+                 document.getElementById('display-enroll-init').style.color = "red";
+                 // Optional: window.location.href = '/api/verification/id-verification/';
+            }
+        };
+
+        function goToSelfie() {
+            const username = document.querySelector('[name=username]').value;
+            const email = document.querySelector('[name=email]').value;
+            if (!username || !email) {
+                alert("Please complete all fields.");
+                return;
+            }
+            showStep(2);
+            startCamera();
+        }
+
+        // --- Step 2: Selfie Camera ---
+        async function startCamera() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const btnCapture = document.getElementById('btn-capture');
+            const btnRetake = document.getElementById('btn-retake');
+
+            video.style.display = "block";
+            canvas.style.display = "none";
+            btnCapture.style.display = "inline-block";
+            btnRetake.style.display = "none";
+
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                video.srcObject = stream;
+            } catch (err) {
+                showMessage(document.getElementById('msg-step2'), 'Camera access denied: ' + err, 'error');
+            }
+        }
+
+        async function captureAndVerify() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const msg = document.getElementById('msg-step2');
+            const btnCapture = document.getElementById('btn-capture');
+
+            // Capture frame
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            // Turn off video
+            video.style.display = "none";
+            canvas.style.display = "block";
+
+            // Convert to Blob
+            canvas.toBlob(async (blob) => {
+                if (!blob) return;
+
+                btnCapture.disabled = true;
+                btnCapture.innerText = "Verifying...";
+                msg.style.display = "none";
+
+                if (!idCardToken) {
+                     showMessage(msg, '❌ ID Card Session Missing. Please restart verification.', 'error');
+                     return;
+                }
+
+                const formData = new FormData();
+                formData.append('selfie_image', blob, 'selfie.jpg');
+                formData.append('id_card_token', idCardToken);
+
+                try {
+                    const res = await fetch('/api/verification/verify-selfie/', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {'X-CSRFToken': '{{ csrf_token }}'}
+                    });
+                    const data = await res.json();
+
+                    if (data.success) {
+                        showMessage(msg, '✅ ' + data.message, 'success');
+                        
+                        // Stop camera
+                        if (stream) stream.getTracks().forEach(track => track.stop());
+                        
+                        setTimeout(() => {
+                            showStep(3);
+                        }, 1000);
+                    } else {
+                        showMessage(msg, '❌ ' + data.message, 'error');
+                        btnCapture.innerText = "Capture & Verify";
+                        btnCapture.disabled = false;
+                        document.getElementById('btn-retake').style.display = "inline-block";
+                        document.getElementById('btn-capture').style.display = "none";
+                    }
+                } catch (err) {
+                    showMessage(msg, 'Error: ' + err, 'error');
+                    btnCapture.disabled = false;
+                }
+            }, 'image/jpeg');
+        }
+
+        // --- Helpers ---
+        function showStep(stepNum) {
+            document.querySelectorAll('.step-container').forEach(el => el.classList.remove('active'));
+            document.getElementById('step-' + stepNum).classList.add('active');
+        }
+
+        function showMessage(el, text, type) {
+            el.innerText = text;
+            el.className = 'message ' + type;
+            el.style.display = 'block';
+        }
+
+        function togglePassword(fieldId, icon) {
+            const field = document.getElementById(fieldId);
+            if (field.type === "password") {
+                field.type = "text";
+                icon.innerText = "🔒"; 
+            } else {
+                field.type = "password";
+                icon.innerText = "👁️";
+            }
+        }
+    </script>
+</body>
+</html>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Safety - Sign Up</title>
+    <style>
         body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
         .container { max-width: 450px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: #333; }

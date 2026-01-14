@@ -20,15 +20,17 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from . import views
 from accounts.views import SignupView, dashboard, verify_page
+from verification.views import id_verification_page, account_details_page, selfie_check_page, signup_final_page
 
 urlpatterns = [
     path("", views.home, name="home"),
     path("admin/", admin.site.urls),
-    path('login/', auth_views.LoginView.as_view(template_name='CampusSafety/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='signup'), name='logout'),
-    path('signup/', SignupView.as_view(), name='signup'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='id_verification_page'), name='logout'),
     path('dashboard/', dashboard, name='dashboard'),
-    path('verify/', verify_page, name='verify_page'),
+    path('id-verification/', id_verification_page, name='id_verification_page'),
+    path('account-details/', account_details_page, name='account_details_page'),
+    path('selfie-check/', selfie_check_page, name='selfie_check_page'),
+    path('complete-signup/', signup_final_page, name='signup_final'),
     path('api/accounts/', include('accounts.urls')),
     path('api/verification/', include('verification.urls')),
 ]

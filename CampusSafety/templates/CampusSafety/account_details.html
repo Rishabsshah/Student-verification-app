@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Safety - Account Details</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #f0f2f5; color: #333; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #1a73e8; margin-bottom: 25px; }
+        
+        label { font-weight: 600; margin-bottom: 8px; display: block; color: #555; }
+        input[type="text"], input[type="email"] { 
+            width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 20px; 
+            border: 1px solid #ddd; border-radius: 8px; font-size: 16px; transition: border 0.3s;
+        }
+        input:focus { border-color: #1a73e8; outline: none; }
+        
+        button { 
+            width: 100%; padding: 12px; border: none; border-radius: 8px; 
+            cursor: pointer; font-size: 16px; font-weight: bold; transition: background 0.3s, transform 0.1s; 
+            color: white; margin-top: 10px;
+        }
+        button:active { transform: scale(0.98); }
+        .btn-primary { background: #1a73e8; }
+        .btn-primary:hover { background: #1557b0; }
+        
+        .status-box { margin-bottom: 20px; padding: 10px; background: #e6f4ea; border: 1px solid #ceead6; border-radius: 6px; color: #1e8e3e; }
+        .links { text-align: center; margin-top: 25px; font-size: 14px; }
+        .links a { color: #1a73e8; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Student Registration</h1>
+        
+        <h3 style="margin-top:0;">Step 2: Account Details</h3>
+        
+        <div class="status-box">
+             ✅ ID Verified: <b>{{ enrollment }}</b>
+        </div>
+
+        <form method="post" onsubmit="return validatePhone()">
+            {% csrf_token %}
+            <!-- Hidden fields to persist data from URL to Session -->
+            <input type="hidden" name="token" value="{{ token }}">
+            <input type="hidden" name="enrollment" value="{{ enrollment }}">
+            <input type="hidden" name="identity_hash" value="{{ request.GET.hash }}">
+            
+            <label for="id_name">Full Name</label>
+            <input type="text" name="full_name" id="id_name" required placeholder="Enter your full name">
+
+            <label for="id_phone">Phone Number</label>
+            <input type="tel" name="phone" id="id_phone" required placeholder="Enter 10-digit phone number" 
+                   pattern="[0-9]{10}" maxlength="10" minlength="10"    
+                   style="width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;"
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+
+            <label for="id_email">Email</label>
+            <input type="email" name="email" id="id_email" required placeholder="Enter your email">
+            
+            <button type="submit" class="btn-primary">Video Selfie Verification</button>
+        </form>
+        
+    </div>
+
+    <script>
+        function validatePhone() {
+            const phone = document.getElementById('id_phone').value;
+            if (phone.length !== 10) {
+                alert('Phone number must be exactly 10 digits');
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Safety - Create Password</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #f0f2f5; color: #333; }
+        .container { max-width: 450px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #1a73e8; margin-bottom: 25px; }
+        
+        label { font-weight: 600; margin-bottom: 8px; display: block; color: #555; }
+        .password-wrapper input { 
+            width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 0; 
+            border: 1px solid #ddd; border-radius: 8px; font-size: 16px; transition: border 0.3s;
+            padding-right: 40px;
+        }
+        .password-wrapper input:focus { border-color: #1a73e8; outline: none; }
+        
+        button { 
+            width: 100%; padding: 12px; border: none; border-radius: 8px; 
+            cursor: pointer; font-size: 16px; font-weight: bold; transition: background 0.3s, transform 0.1s; 
+            color: white; margin-top: 10px;
+        }
+        button:active { transform: scale(0.98); }
+        .btn-success { background: #34a853; }
+        .btn-success:hover { background: #2d8d46; }
+
+        .password-wrapper { position: relative; margin-bottom: 20px; }
+        .toggle-password { position: absolute; right: 12px; top: 14px; cursor: pointer; color: #777; }
+        
+        .error { color: red; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Student Registration</h1>
+        
+        <h3 style="margin-top:0;">Step 4: Secure Account</h3>
+        <p style="color: grey;">Final step! Create a strong password.</p>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <label for="id_password1">Password</label>
+            <div class="password-wrapper">
+                {{ form.password1 }}
+                <span class="toggle-password" onclick="togglePassword('id_password1', this)">👁️</span>
+            </div>
+            
+            <label for="id_password2">Confirm Password</label>
+            <div class="password-wrapper">
+                {{ form.password2 }}
+                <span class="toggle-password" onclick="togglePassword('id_password2', this)">👁️</span>
+            </div>
+
+            {% if form.errors %}
+                <div class="error">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <button type="submit" class="btn-success">Create Account</button>
+        </form>
+    </div>
+
+    <script>
+        function togglePassword(fieldId, icon) {
+            const field = document.getElementById(fieldId);
+            if (field.type === "password") {
+                field.type = "text";
+                icon.innerText = "🔒"; 
+            } else {
+                field.type = "password";
+                icon.innerText = "👁️";
+            }
+        }
+    </script>
+</body>
+</html>

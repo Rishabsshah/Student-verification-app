@@ -45,6 +45,22 @@ class User(AbstractUser):
         help_text="Hash of student details to prevent duplicate registrations"
     )
 
+    # Phone number (mandatory, 10 digits)
+    phone_number = models.CharField(
+        max_length=10,
+        null=True,
+        blank=True,
+        help_text="Student's 10-digit phone number"
+    )
+
+    # Selfie for manual review
+    selfie_image = models.ImageField(
+        upload_to='student_selfies/',
+        null=True,
+        blank=True,
+        help_text="Captured video selfie for admin review"
+    )
+
     def __str__(self):
         return f"{self.username} ({self.enrollment_number or 'No enrollment'})"
 

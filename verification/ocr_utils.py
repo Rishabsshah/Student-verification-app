@@ -5,9 +5,82 @@ from typing import Optional, Tuple
 
 
 COLLEGE_PATTERNS = {
-    "Thakur Polytechnic": r"THAKUR.*?(POLY)?TECHNIC",
-    "ABC College": r"ABC\s*COLLEGE",
-    "DEF Institute": r"DEF\s*INSTITUTE",
+    # Mumbai City
+    "A.I. Saboo Siddik Polytechnic": r"SABOO\s*SIDDIK\s*(POLY)?TECHNIC",
+    "Government Institute of Printing Technology": r"GOVT.*INSTITUTE.*PRINTING.*TECH",
+    "IDEMI Mumbai": r"IDEMI",
+    "K.J. Somaiya Polytechnic": r"K\.*\s*J\.*\s*SOMAIYA\s*(POLY)?TECHNIC",
+    "L&T Institute of Technology": r"L\s*(&|AND)\s*T\s*INSTITUTE.*TECH",
+    "Babasaheb Gawde Institute of Technology": r"BABASAHEB\s*GAWDE\s*INSTITUTE.*TECH",
+    "MET Institute of Pharmacy": r"MET\s*INSTITUTE.*PHARMACY|MUMBAI\s*EDUCATIONAL\s*TRUST",
+    "Nagrik Shikshan Sanstha Pharmacy": r"NAGRIK\s*SHIKSHAN.*PHARMACY",
+    "Sasmira's Institute": r"SASMIRA",
+    "Sophia B.K. Somani Polytechnic": r"SOPHIA.*SOMANI\s*(POLY)?TECHNIC",
+    "St. Xavier's Technical Institute": r"XAVIER.*TECH",
+    "VJTI (Veermata Jijabai)": r"VEERMATA\s*JIJABAI|VJTI",
+    "Vidyalankar Polytechnic": r"VIDYALANKAR\s*(POLY)?TECHNIC",
+    "VES Polytechnic (Vivekanand)": r"VIVEKANAND.*EDU.*(POLY)?TECHNIC|VES\s*POLYTECHNIC",
+
+    # Mumbai Suburban
+    "Abdul Razzak Kalsekar Polytechnic": r"ABDUL\s*RAZZAK|KALSEKAR",
+    "Agnel Technical College": r"AGNEL.*TECH",
+    "Government Polytechnic Mumbai": r"GOVT.*(POLY)?TECHNIC.*MUMBAI",
+    "A.C. Patil College (Jawahar Education)": r"A\.*\s*C\.*\s*PATIL|JAWAHAR.*EDU",
+    "Kala Vidya Mandir Institute": r"KALA\s*VIDYA\s*MANDIR",
+    "Navjeevan Education Society's Polytechnic": r"NAVJEEVAN",
+    "Premlila Vithaldas Polytechnic": r"PREMLILA.*VITHALDAS",
+    "Shah and Anchor Kutchhi Polytechnic": r"SHAH.*ANCHOR|KUTCHHI",
+    "Shri Bhagubhai Mafatlal Polytechnic": r"BHAGUBHAI.*MAFATLAL",
+
+    # Thane District
+    "Agnel Charities Agnel Polytechnic": r"AGNEL\s*CHARITIES|AGNEL\s*(POLY)?TECHNIC",
+    "B.R. Harne College of Engineering": r"B\.*\s*R\.*\s*HARNE",
+    "Balasaheb Mhatre Polytechnic": r"BALASAHEB\s*MHATRE",
+    "Bharati Vidyapeeth Institute of Pharmacy": r"BHARATI\s*VIDYAPEETH.*PHARMACY",
+    "Bharati Vidyapeeth Institute of Technology": r"BHARATI\s*VIDYAPEETH.*TECH",
+    "Devi Mahalaxmi Polytechnic": r"DEVI\s*MAHALAXMI",
+    "Dr. D.Y. Patil Polytechnic": r"D\.*\s*Y\.*\s*PATIL",
+    "Dr. Manoj A. Shete College": r"MANOJ\s*.*SHETE",
+    "G.E. Society's Katgara Polytechnic": r"KATGARA",
+    "Government Polytechnic Vikramgad": r"GOVT.*(POLY)?TECHNIC.*VIKRAMGAD",
+    "Government Polytechnic Thane": r"GOVT.*(POLY)?TECHNIC.*THANE",
+    "Ideal College of Pharmacy (Kalyan)": r"IDEAL.*PHARMACY.*KALYAN",
+    "Ideal Institute of Pharmacy": r"IDEAL.*INSTITUTE.*PHARMACY",
+    "Alamuri Ratnamala Institute (Koti Vidya)": r"ALAMURI\s*RATNAMALA|KOTI\s*VIDYA",
+    "Muchhala Polytechnic": r"MUCHHALA",
+    "NCRD Institute of Pharmacy": r"NCRD",
+    "Pravin Patil College": r"PRAVIN\s*PATIL",
+    "Prin K.M. Kundnani Pharmacy": r"KUNDNANI",
+    "S.H. Jondhale Polytechnic (Samarth Samaj)": r"S\.*\s*H\.*\s*JONDHALE",
+    "Shivajirao S. Jondhale Polytechnic": r"SHIVAJIRAO\s*S\.*\s*JONDHALE",
+    "Shivgita Institute of Pharmacy": r"SHIVGITA",
+    "St. John College of Engineering": r"ST\.*\s*JOHN.*ENG",
+    "St. John Institute of Pharmacy": r"ST\.*\s*JOHN.*PHARMACY",
+    "Theem College of Engineering": r"THEEM",
+    "Vidya Prasarak Mandal's Polytechnic (Thane)": r"VIDYA\s*PRASARAK\s*MANDAL|VPM",
+    "Vidyavardhini's Bhausaheb Vartak Polytechnic": r"BHAUSAHEB\s*VARTAK|VIDYAVARDHINI",
+    "Vishwatmak Om Gurudev College": r"VISHWATMAK\s*OM\s*GURUDEV",
+    "Viva College": r"VIVA",
+
+    # Karjat, Panvel, Raigad
+    "B.L. Patil Polytechnic": r"B\.*\s*L\.*\s*PATIL",
+    "Bhartiya Education Society Pharmacy": r"BHARTIYA\s*EDU.*PHARMACY",
+    "Dilkap Research Institute": r"DILKAP",
+    "DBATU (Babasaheb Ambedkar Tech Univ)": r"BATU|AMBEDKAR.*TECH.*UNIV",
+    "G.V. Acharya Polytechnic": r"G\.*\s*V\.*\s*ACHARYA",
+    "Government Polytechnic Pen": r"GOVT.*(POLY)?TECHNIC.*PEN",
+    "Maharashtra Mudran Parishad (Printing Tech)": r"MAHARASHTRA\s*MUDRAN.*PRINTING",
+    "Navyug Vidyapeeth Trust": r"NAVYUG",
+    "Pillai HOC Polytechnic": r"PILLAI\s*HOC",
+    "Prabhakar Patil Education Society": r"PRABHAKAR\s*PATIL",
+    "Saraswati Institute of Technology": r"SARASWATI.*TECH",
+    "SBNM College of Pharmacy": r"SBNM.*PHARMACY",
+    "Shantiniketan Polytechnic": r"SHANTINIKETAN",
+    "Sheth Shri Otarmal Sheshmal Parmar College": r"OTARMAL\s*SHESHMAL|PARMAR",
+    "Smt Geeta D Tatkare Polytechnic": r"GEETA\s*TATKARE",
+    "St. Wilfreds Institute of Pharmacy": r"ST\.*\s*WILFRED.*PHARMACY",
+    "Yadavrao Tasgaonkar Institute of Pharmacy": r"TASGAONKAR.*PHARMACY",
+    "Yadavrao Tasgaonkar Polytechnic": r"TASGAONKAR.*(POLY)?TECHNIC",
 }
 
 
@@ -181,3 +254,102 @@ def verify_student_id(image_path: str) -> Tuple[Optional[str], Optional[str], Op
 
     except Exception as e:
         return None, None, None, f"OCR processing failed: {str(e)}"
+
+
+# --- Face Verification Utils ---
+
+import numpy as np
+try:
+    import face_recognition
+    FACE_REC_AVAILABLE = True
+except ImportError:
+    FACE_REC_AVAILABLE = False
+    print("Warning: face_recognition library not found. using basic OpenCV fallback.")
+
+def load_and_encode_face(image_path: str):
+    """
+    Loads an image and returns the 128-d face encoding of the first face found.
+    Returns None if no face is found.
+    """
+    if not FACE_REC_AVAILABLE:
+        return None
+
+    try:
+        # Load image
+        image = face_recognition.load_image_file(image_path)
+        # Get face encodings
+        encodings = face_recognition.face_encodings(image)
+        
+        if len(encodings) > 0:
+            return encodings[0]
+        return None
+    except Exception as e:
+        print(f"Error processing face: {e}")
+        return None
+
+def compare_faces(id_card_path: str, selfie_path: str, tolerance: float = 0.6) -> Tuple[bool, str]:
+    """
+    Compares the face in the ID card with the selfie.
+    Returns (True/False, Message).
+    """
+    # 1. Try Advanced Face Recognition (if installed)
+    if FACE_REC_AVAILABLE:
+        try:
+            id_encoding = load_and_encode_face(id_card_path)
+            if id_encoding is None:
+                # Fallback to OpenCV if face_recognition fails to detct face (e.g. blurry ID)
+                pass 
+            else:
+                selfie_encoding = load_and_encode_face(selfie_path)
+                if selfie_encoding is None:
+                    return False, "No face detected in the selfie. Please capture a clear photo."
+
+                # Compare
+                results = face_recognition.compare_faces([id_encoding], selfie_encoding, tolerance=tolerance)
+                distance = face_recognition.face_distance([id_encoding], selfie_encoding)[0]
+                
+                if results[0]:
+                    return 'VERIFIED', f"Face match successful! (Distance: {distance:.2f})"
+                else:
+                    # Check if it was a "close call" for manual review
+                    # Distance 0.6 is strict. 0.6 to 0.75 might be same person with changes.
+                    if distance < 0.75:
+                         return 'REVIEW', f"Match uncertain (Distance: {distance:.2f}). Marked for manual review."
+                    return 'REJECTED', f"Faces do not match. (Distance: {distance:.2f})"
+
+        except Exception as e:
+            print(f"Face recognition error: {e}")
+            # Continue to fallback
+            
+    # 2. Fallback: OpenCV Histogram Comparison (Basic Check)
+    try:
+        img1 = cv2.imread(id_card_path)
+        img2 = cv2.imread(selfie_path)
+        
+        if img1 is None or img2 is None:
+             return 'REJECTED', "Could not read images for comparison."
+
+        # Convert to HSV
+        hsv1 = cv2.cvtColor(img1, cv2.COLOR_BGR2HSV)
+        hsv2 = cv2.cvtColor(img2, cv2.COLOR_BGR2HSV)
+        
+        # Calculate Histograms
+        hist1 = cv2.calcHist([hsv1], [0, 1], None, [180, 256], [0, 180, 0, 256])
+        hist2 = cv2.calcHist([hsv2], [0, 1], None, [180, 256], [0, 180, 0, 256])
+        
+        cv2.normalize(hist1, hist1, 0, 1, cv2.NORM_MINMAX)
+        cv2.normalize(hist2, hist2, 0, 1, cv2.NORM_MINMAX)
+        
+        # Compare (Correlation)
+        score = cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
+        
+        # Score > 0.5 implies decent color correlation
+        # Since we lack dlib, we trust "Liveness" (Head Turn/Blink) for security
+        # and use this just to filter completely wrong images.
+        if score > 0.15: 
+             return 'REVIEW', f"Visual similarity good ({score:.2f}). Pending manual verification."
+        else:
+             return 'REJECTED', f"Visual check failed (Score: {score:.2f}). Images look too different."
+
+    except Exception as e:
+        return 'REJECTED', f"Comparison error: {str(e)}"

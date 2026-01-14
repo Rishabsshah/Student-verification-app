@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Video Selfie Verification</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- MediaPipe Face Mesh -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #000; color: white; display: flex; flex-direction: column; align-items: center; margin: 0; height: 100vh; justify-content: center; }
+        
+        #canvas-container { 
+            position: relative; width: 320px; height: 320px; 
+            border-radius: 50%; overflow: hidden; border: 4px solid #333; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        
+        /* Oval Shape Mask */
+        .camera-mask {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 50%; /* Simplified oval/circle */
+            box-shadow: inset 0 0 0 4px rgba(255,255,255,0.2);
+            pointer-events: none; z-index: 10;
+        }
+
+        #video_input { transform: scaleX(-1); width: 100%; height: 100%; object-fit: cover; }
+        #output_canvas { position: absolute; top:0; left:0; width:100%; height:100%; transform: scaleX(-1); }
+
+        .instruction {
+            font-size: 24px; font-weight: bold; margin-bottom: 20px; text-align: center;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8); min-height: 40px; color: #fff;
+        }
+        
+        .status-pill {
+            margin-top: 20px; padding: 8px 16px; background: rgba(255,255,255,0.1); 
+            border-radius: 20px; font-size: 14px; color: #aaa;
+        }
+
+        /* Animations */
+        @keyframes pulse { 0% { border-color: #333; } 50% { border-color: #1a73e8; box-shadow: 0 0 30px #1a73e8; } 100% { border-color: #333; } }
+        .active-check { animation: pulse 1.5s infinite; border-color: #1a73e8 !important; }
+        
+        @keyframes flash { 0% { background: white; } 100% { background: transparent; } }
+        .flash-effect { position: fixed; top:0; left:0; width:100%; height:100%; background: white; z-index: 100; animation: flash 0.5s ease-out forwards; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <div id="instruction" class="instruction">Loading Camera...</div>
+
+    <div id="canvas-container">
+        <video id="video_input" autoplay playsinline></video>
+        <canvas id="output_canvas"></canvas>
+        <div class="camera-mask"></div>
+    </div>
+
+    <div class="status-pill" id="status-text">Initializing Face Mesh...</div>
+
+    <script>
+        const videoElement = document.getElementById('video_input');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const instructionEl = document.getElementById('instruction');
+        const statusEl = document.getElementById('status-text');
+        const container = document.getElementById('canvas-container');
+
+        let isFaceDetected = false;
+        let livenessStep = 0; // 0: Center, 1: Turn Left, 2: Blink
+        let captured = false;
+        
+        // Configuration
+        const STEPS = [
+            { id: 0, text: "Position face in oval", check: checkCenter },
+            { id: 1, text: "Turn slightly LEFT ⬅️", check: checkTurnLeft },
+            { id: 2, text: "Blink your eyes 👁️", check: checkBlink }
+        ];
+
+        // State variables
+        let lastBlink = Date.now();
+        let blinkDetected = false;
+
+        function onResults(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+            
+            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+                isFaceDetected = true;
+                const landmarks = results.multiFaceLandmarks[0];
+                
+                // Draw Mesh (Optional, kept minimal for aesthetic)
+                // drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, {color: '#C0C0C070', lineWidth: 1});
+
+                // Check Liveness State
+                if (!captured) processLiveness(landmarks);
+
+            } else {
+                isFaceDetected = false;
+                instructionEl.innerText = "Face not found";
+                container.classList.remove('active-check');
+            }
+            canvasCtx.restore();
+        }
+
+        // --- Logic ---
+
+        function processLiveness(landmarks) {
+            const currentStep = STEPS[livenessStep];
+            instructionEl.innerText = currentStep.text;
+            container.classList.add('active-check');
+
+            if (currentStep.check(landmarks)) {
+                // Advance Step
+                livenessStep++;
+                if (livenessStep >= STEPS.length) {
+                    captureSelfie();
+                } else {
+                    // Feedback for next step
+                     instructionEl.style.color = "#4CAF50"; // Green flash
+                     setTimeout(() => instructionEl.style.color = "white", 300);
+                }
+            }
+        }
+
+        function checkCenter(landmarks) {
+            // Nose tip is index 1 or 4
+            const nose = landmarks[1]; 
+            // Check if nose is roughly centered (0.4 to 0.6)
+            const centered = (nose.x > 0.4 && nose.x < 0.6 && nose.y > 0.4 && nose.y < 0.7);
+            
+            statusEl.innerText = centered ? "Face Centered" : "Move to Center";
+            return centered;
+        }
+
+        function checkTurnLeft(landmarks) {
+            // Simple nose vs ear/cheek comparison x-axis
+            const nose = landmarks[1].x;
+            const leftCheek = landmarks[234].x; // Left side of face (screen right usually due to mirror)
+            
+            // Mirror mode: "Turn Left" means nose moves "Right" on screen (x increases)
+            // Or strictly: User turns head left, so their LEFT cheek becomes more visible/center
+            // Let's use simple Yaw proxy: nose x vs face center
+            // Actually, if nose.x < 0.4 (Screen Left) or > 0.6 (Screen Right)
+            
+            // Trigger if nose moves significantly to one side
+            // Let's assume Screen Left for "Turn Left"
+            return (nose > 0.6); // Threshold for "Turn"
+        }
+
+        function checkBlink(landmarks) {
+            // EAR (Eye Aspect Ratio) logic simplified
+            // Left Eye: 33, 160, 158, 133, 153, 144
+            // Right Eye: 362, 385, 387, 263, 373, 380
+            
+            const leftEyeTop = landmarks[159].y;
+            const leftEyeBottom = landmarks[145].y;
+            const rightEyeTop = landmarks[386].y;
+            const rightEyeBottom = landmarks[374].y;
+
+            const leftOpen = Math.abs(leftEyeTop - leftEyeBottom);
+            const rightOpen = Math.abs(rightEyeTop - rightEyeBottom);
+
+            const isClosed = (leftOpen < 0.015 && rightOpen < 0.015);
+            
+            if (isClosed) {
+                blinkDetected = true;
+            } else if (blinkDetected && !isClosed) {
+                // User blinked (Closed then Open)
+                blinkDetected = false; 
+                return true; 
+            }
+            return false;
+        }
+
+        function captureSelfie() {
+            captured = true;
+            instructionEl.innerText = "Verifying...";
+            container.classList.remove('active-check');
+            
+            // Visual Flash
+            const flash = document.createElement('div');
+            flash.className = 'flash-effect';
+            document.body.appendChild(flash);
+
+            // Convert canvas to blob and upload
+            canvasElement.toBlob(uploadFrame, 'image/jpeg', 0.95);
+        }
+
+        async function uploadFrame(blob) {
+            const formData = new FormData();
+            formData.append('selfie_image', blob, 'liveness_check.jpg');
+            // Django Session Token
+            formData.append('id_card_token', "{{ token }}"); 
+
+            try {
+                const res = await fetch('/api/verification/verify-selfie/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {'X-CSRFToken': '{{ csrf_token }}'}
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    instructionEl.innerText = "✅ Verified!";
+                    statusEl.innerText = "Redirecting to Final Step...";
+                    setTimeout(() => {
+                        window.location.href = "{% url 'signup_final' %}";
+                    }, 1500);
+                } else {
+                    instructionEl.innerText = "❌ Match Failed";
+                    statusEl.innerText = data.message;
+                    
+                    if (data.message.includes("Session expired") || data.message.includes("Invalid token")) {
+                         statusEl.innerText += " - Restarting...";
+                         setTimeout(() => window.location.href = "{% url 'id_verification_page' %}", 2000);
+                    } else {
+                         statusEl.innerText += " - Reloading...";
+                         setTimeout(() => window.location.reload(), 3000);
+                    }
+                }
+            } catch (err) {
+                instructionEl.innerText = "Error";
+                console.error(err);
+            }
+        }
+
+        // --- Init MediaPipe ---
+        const faceMesh = new FaceMesh({locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+        }});
+        
+        faceMesh.setOptions({
+            maxNumFaces: 1,
+            refineLandmarks: true,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+        
+        faceMesh.onResults(onResults);
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await faceMesh.send({image: videoElement});
+            },
+            width: 640,
+            height: 480
+        });
+        
+        camera.start().then(() => {
+             statusEl.innerText = "Camera Active";
+        }).catch(err => {
+             instructionEl.innerText = "Camera Error";
+             statusEl.innerText = "Allow camera access " + err;
+        });
+
+    </script>
+</body>
+</html>

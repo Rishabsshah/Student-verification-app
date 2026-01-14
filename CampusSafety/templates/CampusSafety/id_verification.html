@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Safety - ID Verification</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #f0f2f5; color: #333; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #1a73e8; margin-bottom: 25px; }
+        
+        label { font-weight: 600; margin-bottom: 8px; display: block; color: #555; }
+        input[type="file"] { 
+            width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 20px; 
+            border: 1px solid #ddd; border-radius: 8px; font-size: 16px; transition: border 0.3s;
+        }
+        input:focus { border-color: #1a73e8; outline: none; }
+        
+        button { 
+            width: 100%; padding: 12px; border: none; border-radius: 8px; 
+            cursor: pointer; font-size: 16px; font-weight: bold; transition: background 0.3s, transform 0.1s; 
+            color: white; margin-top: 10px;
+        }
+        button:active { transform: scale(0.98); }
+        .btn-primary { background: #1a73e8; }
+        .btn-primary:hover { background: #1557b0; }
+        
+        .message { margin-top: 15px; padding: 10px; border-radius: 6px; display: none; font-size: 14px; }
+        .message.error { background: #fce8e6; color: #d93025; border: 1px solid #fad2cf; }
+        .message.success { background: #e6f4ea; color: #1e8e3e; border: 1px solid #ceead6; }
+
+        .loader {
+            border: 3px solid #f3f3f3; border-top: 3px solid #1a73e8; border-radius: 50%;
+            width: 20px; height: 20px; animation: spin 1s linear infinite;
+            display: inline-block; vertical-align: middle; margin-right: 8px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .links { text-align: center; margin-top: 25px; font-size: 14px; }
+        .links a { color: #1a73e8; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Student Registration</h1>
+        
+        <div id="step-container">
+            <h3 style="margin-top:0;">Step 1: Identity Verification</h3>
+            
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+                Please upload your student ID card to begin the registration process.
+            </p>
+
+            <label for="id_card_image">Upload Student ID Card</label>
+            <input type="file" id="id_card_image" name="id_card_image" accept="image/*">
+            <small style="color: #666; display: block; margin-top: -15px; margin-bottom: 10px;">Accepted formats: JPG, PNG, JPEG</small>
+            <small style="color: #e67700; display: block; margin-bottom: 20px;">⚠️ Please upload a clear, well-lit photo of your ID card for accurate verification.</small>
+
+            <div id="msg-box" class="message"></div>
+            
+            <button type="button" id="btn-verify-id" class="btn-primary" onclick="verifyIdCard()">
+                <span id="loader" class="loader" style="display:none;"></span> Verify Now
+            </button>
+        </div>
+    </div>
+
+    <script>
+        async function verifyIdCard() {
+            const fileInput = document.getElementById('id_card_image');
+            const btn = document.getElementById('btn-verify-id');
+            const msg = document.getElementById('msg-box');
+            const loader = document.getElementById('loader');
+
+            if (!fileInput.files[0]) {
+                showMessage('Please upload an ID card image.', 'error');
+                return;
+            }
+
+            // Reset UI
+            btn.disabled = true;
+            loader.style.display = "inline-block";
+            msg.style.display = "none";
+
+            const formData = new FormData();
+            formData.append('id_image', fileInput.files[0]);
+
+            try {
+                // Use the API we defined earlier
+                const res = await fetch('/api/verification/inspect-id/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {'X-CSRFToken': getCookie('csrftoken')}
+                });
+                const data = await res.json();
+
+                if (data.valid) {
+                    showMessage('✅ ID Verified! Redirecting...', 'success');
+                    
+                    // Redirect to Step 2 (Signup Page) with data
+                    // We encode data in URL (In prod, use session/POST for security, but this works for demo)
+                    const params = new URLSearchParams({
+                        enrollment: data.enrollment,
+                        hash: data.identity_hash,
+                        token: data.id_card_token
+                    });
+                    
+                    setTimeout(() => {
+                        window.location.href = '/account-details/?' + params.toString();
+                    }, 1000);
+
+                } else {
+                    // Show message OR error if message is missing (e.g. 500 exception)
+                    showMessage('❌ ' + (data.message || data.error || "Unknown Error"), 'error');
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                showMessage('Server Error: ' + err, 'error');
+                btn.disabled = false;
+            } finally {
+                loader.style.display = "none";
+            }
+        }
+
+        function showMessage(text, type) {
+            const el = document.getElementById('msg-box');
+            el.innerText = text;
+            el.className = 'message ' + type;
+            el.style.display = 'block';
+        }
+
+        // CSRF Helper
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>

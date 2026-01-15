@@ -91,30 +91,37 @@ def preprocess_image_cloud(image_path: str) -> str:
     Free tier: 25,000 requests/month
     """
     try:
-        # Read image and convert to base64
-        with open(image_path, 'rb') as image_file:
-            image_data = base64.b64encode(image_file.read()).decode('utf-8')
-        
         # OCR.space API endpoint
         url = "https://api.ocr.space/parse/image"
         
-        # Free API key (public, 25k requests/month)
-        # You can get your own key at https://ocr.space/ocrapi
-        payload = {
-            'apikey': 'K87899142388957',  # Free public key
-            'base64Image': f'data:image/png;base64,{image_data}',
-            'language': 'eng',
-            'isOverlayRequired': False,
-            'detectOrientation': True,
-            'scale': True,
-            'OCREngine': 2  # Engine 2 is more accurate
-        }
+        # Free API key (you can get your own at https://ocr.space/ocrapi)
+        with open(image_path, 'rb') as image_file:
+            payload = {
+                'apikey': 'K87899142388957',
+                'language': 'eng',
+                'isOverlayRequired': 'false',
+                'detectOrientation': 'true',
+                'scale': 'true',
+                'OCREngine': '2'
+            }
+            files = {'file': image_file}
+            
+            response = requests.post(url, data=payload, files=files, timeout=30)
         
-        response = requests.post(url, data=payload, timeout=30)
-        result = response.json()
+        # Check if response is valid
+        if response.status_code != 200:
+            raise Exception(f"API returned status code {response.status_code}")
         
+        # Try to parse JSON
+        try:
+            result = response.json()
+        except ValueError:
+            raise Exception(f"Invalid API response: {response.text[:200]}")
+        
+        # Check for errors
         if result.get('IsErroredOnProcessing'):
-            error_msg = result.get('ErrorMessage', ['Unknown error'])[0]
+            error_msgs = result.get('ErrorMessage', [])
+            error_msg = error_msgs[0] if error_msgs else 'Unknown error'
             raise Exception(f"OCR API Error: {error_msg}")
         
         # Extract text from all parsed results
@@ -124,12 +131,16 @@ def preprocess_image_cloud(image_path: str) -> str:
         
         # Combine all detected text
         full_text = '\n'.join([res.get('ParsedText', '') for res in parsed_results])
+        
+        if not full_text.strip():
+            raise Exception("OCR returned empty text - please use a clearer image")
+        
         return full_text
         
     except requests.exceptions.Timeout:
         raise Exception("OCR API timeout - please try again")
-    except Exception as e:
-        raise Exception(f"Cloud OCR failed: {str(e)}")
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Network error: {str(e)}")
 
 
 def normalize_text(text: str) -> str:

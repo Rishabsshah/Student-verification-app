@@ -6,7 +6,6 @@ whitenoise
 
 # Image Processing
 opencv-python-headless
-pytesseract
 Pillow
 numpy
 

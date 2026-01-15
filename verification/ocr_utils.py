@@ -1,6 +1,7 @@
 import cv2
-import pytesseract
 import re
+import requests
+import base64
 from typing import Optional, Tuple
 
 
@@ -84,31 +85,51 @@ COLLEGE_PATTERNS = {
 }
 
 
-def preprocess_image(image_path: str) -> str:
-    image = cv2.imread(image_path)
-    if image is None:
-        raise ValueError("Invalid image path or unreadable image")
-
-    texts = []
-
-    # Strategy 1: Resized (2x) + Threshold (Good for small text)
-    resized = cv2.resize(image, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
-    gray_res = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-    blurred_res = cv2.GaussianBlur(gray_res, (5, 5), 0)
-    _, thresh_res = cv2.threshold(blurred_res, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    texts.append(pytesseract.image_to_string(thresh_res))
-
-    # Strategy 2: Original + Grayscale (Good for noisy backgrounds where threshold fails)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    texts.append(pytesseract.image_to_string(gray))
-
-    # Strategy 3: Original + Threshold (Standard)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    texts.append(pytesseract.image_to_string(thresh))
-
-    # Return all texts combined. The extraction logic will scan this large blob.
-    return "\n".join(texts)
+def preprocess_image_cloud(image_path: str) -> str:
+    """
+    Uses OCR.space API for cloud-based OCR (no Tesseract needed).
+    Free tier: 25,000 requests/month
+    """
+    try:
+        # Read image and convert to base64
+        with open(image_path, 'rb') as image_file:
+            image_data = base64.b64encode(image_file.read()).decode('utf-8')
+        
+        # OCR.space API endpoint
+        url = "https://api.ocr.space/parse/image"
+        
+        # Free API key (public, 25k requests/month)
+        # You can get your own key at https://ocr.space/ocrapi
+        payload = {
+            'apikey': 'K87899142388957',  # Free public key
+            'base64Image': f'data:image/png;base64,{image_data}',
+            'language': 'eng',
+            'isOverlayRequired': False,
+            'detectOrientation': True,
+            'scale': True,
+            'OCREngine': 2  # Engine 2 is more accurate
+        }
+        
+        response = requests.post(url, data=payload, timeout=30)
+        result = response.json()
+        
+        if result.get('IsErroredOnProcessing'):
+            error_msg = result.get('ErrorMessage', ['Unknown error'])[0]
+            raise Exception(f"OCR API Error: {error_msg}")
+        
+        # Extract text from all parsed results
+        parsed_results = result.get('ParsedResults', [])
+        if not parsed_results:
+            raise Exception("No text detected in image")
+        
+        # Combine all detected text
+        full_text = '\n'.join([res.get('ParsedText', '') for res in parsed_results])
+        return full_text
+        
+    except requests.exceptions.Timeout:
+        raise Exception("OCR API timeout - please try again")
+    except Exception as e:
+        raise Exception(f"Cloud OCR failed: {str(e)}")
 
 
 def normalize_text(text: str) -> str:
@@ -240,7 +261,7 @@ def extract_enrollment_number(text: str) -> Optional[str]:
 
 def verify_student_id(image_path: str) -> Tuple[Optional[str], Optional[str], Optional[str], str]:
     try:
-        raw_text = preprocess_image(image_path)
+        raw_text = preprocess_image_cloud(image_path)
         normalized_text = normalize_text(raw_text)
 
         college = extract_college_name(normalized_text)

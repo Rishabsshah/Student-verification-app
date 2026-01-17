@@ -9,5 +9,10 @@ opencv-python-headless
 Pillow
 numpy
 
+# Face Recognition (Production)
+deepface
+tf-keras
+tensorflow
+
 # HTTP Requests
 requests

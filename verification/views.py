@@ -200,26 +200,36 @@ def verify_selfie(request):
         
         # Compare
         similarity = FaceAnalysisModel.compute_similarity(id_embedding, selfie_embedding)
-        print(f"InsightFace Similarity: {similarity}")
+        print(f"DeepFace VGG-Face Similarity: {similarity}")
         
-        # Thresholds (Cosine Similarity)
-        # > 0.4 is usually a decent match for Buffalo_L
-        # > 0.6 is very strong
+        # Thresholds for DeepFace VGG-Face (Raw Cosine Similarity: -1 to 1)
+        # Typical values for VGG-Face embeddings:
+        # - Same person: 0.40 to 0.70
+        # - Different people: -0.10 to 0.30
+        # Higher score = more similar faces
         
-        if similarity > 0.4:
+        # TIER 1: Auto-Verify (0.40+) - Strong match, same person
+        if similarity > 0.40:
             status_code = 'VERIFIED'
-            msg = f"Verified (Score: {similarity:.2f})"
+            msg = f"✅ Verified - Same Person (Similarity: {similarity:.3f})"
+            
+        # TIER 2: Admin Review (0.25-0.40) - Uncertain match
+        # Could be same person with major appearance changes, or similar-looking people
         elif similarity > 0.25:
              status_code = 'REVIEW'
-             msg = f"Low Confidence Match (Score: {similarity:.2f})"
+             msg = f"⚠️ Uncertain Match - Cannot Auto-Verify (Similarity: {similarity:.3f})"
+             
+        # TIER 3: Reject (<0.25) - Different people
         else:
              status_code = 'REJECTED'
-             msg = f"Face Mismatch (Score: {similarity:.2f})"
+             msg = f"❌ Different Person - Rejected (Similarity: {similarity:.3f})"
 
-        success = (status_code in ['VERIFIED', 'REVIEW'])
+        # CRITICAL: Only VERIFIED should be allowed to proceed
+        # REVIEW and REJECTED should BLOCK the signup process
+        success = (status_code == 'VERIFIED')
         
         if status_code == 'REVIEW':
-            msg += " (Note: Marked for admin review)"
+            msg += " - This verification requires manual admin approval. Please contact support."
         
         request.session['verification_status'] = status_code
         request.session['temp_selfie_name'] = selfie_name 
@@ -398,6 +408,18 @@ def signup_final_page(request):
         if form.is_valid():
             # Create user manually (use email as username since we removed username field)
             email = request.session.get('signup_email')
+            
+            # Check if user already exists
+            if User.objects.filter(email=email).exists():
+                from django.contrib import messages
+                messages.error(request, f'An account with email {email} already exists. Please login instead.')
+                return redirect('login')
+            
+            if User.objects.filter(username=email).exists():
+                from django.contrib import messages
+                messages.error(request, f'An account with this email already exists. Please login instead.')
+                return redirect('login')
+            
             user = User(
                 username=email,  # Use email as username
                 email=email,
@@ -446,6 +468,8 @@ def signup_final_page(request):
             
             # Auto-login the user
             from django.contrib.auth import login
+            # Specify the backend to avoid "multiple backends" error
+            user.backend = 'django.contrib.auth.backends.ModelBackend'
             login(request, user)
             
             return redirect('dashboard')

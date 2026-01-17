@@ -200,29 +200,29 @@ def verify_selfie(request):
         
         # Compare
         similarity = FaceAnalysisModel.compute_similarity(id_embedding, selfie_embedding)
-        print(f"DeepFace VGG-Face Similarity: {similarity}")
+        print(f"OpenCV Histogram Similarity: {similarity}")
         
-        # Thresholds for DeepFace VGG-Face (Raw Cosine Similarity: -1 to 1)
-        # Typical values for VGG-Face embeddings:
-        # - Same person: 0.40 to 0.70
-        # - Different people: -0.10 to 0.30
-        # Higher score = more similar faces
+        # 🎯 HACKATHON/PROTOTYPE MODE - OpenCV Histogram Comparison
+        # Histogram correlation returns 0.0 (different) to 1.0 (identical)
+        # These thresholds are VERY LENIENT for quick demo purposes!
         
-        # TIER 1: Auto-Verify (0.40+) - Strong match, same person
-        if similarity > 0.40:
+        # TIER 1: Auto-Verify (0.50+) - LENIENT for hackathon
+        # Decent histogram match - good enough for prototype
+        if similarity > 0.50:
             status_code = 'VERIFIED'
-            msg = f"✅ Verified - Same Person (Similarity: {similarity:.3f})"
+            msg = f"✅ Verified - Face Match (Similarity: {similarity:.3f})"
             
-        # TIER 2: Admin Review (0.25-0.40) - Uncertain match
-        # Could be same person with major appearance changes, or similar-looking people
-        elif similarity > 0.25:
+        # TIER 2: Admin Review (0.30-0.50) - LENIENT for hackathon
+        # Weak match - might be same person with different lighting/angle
+        elif similarity > 0.30:
              status_code = 'REVIEW'
-             msg = f"⚠️ Uncertain Match - Cannot Auto-Verify (Similarity: {similarity:.3f})"
+             msg = f"⚠️ Uncertain Match - Manual Review Needed (Similarity: {similarity:.3f})"
              
-        # TIER 3: Reject (<0.25) - Different people
+        # TIER 3: Reject (<0.30) - Different faces
+        # Very low similarity - definitely different people
         else:
              status_code = 'REJECTED'
-             msg = f"❌ Different Person - Rejected (Similarity: {similarity:.3f})"
+             msg = f"❌ No Match - Different Person (Similarity: {similarity:.3f})"
 
         # CRITICAL: Only VERIFIED should be allowed to proceed
         # REVIEW and REJECTED should BLOCK the signup process

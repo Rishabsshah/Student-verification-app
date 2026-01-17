@@ -2,77 +2,529 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campus Safety - Account Details</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ResQ - Account Details</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #f0f2f5; color: #333; }
-        .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #1a73e8; margin-bottom: 25px; }
-        
-        label { font-weight: 600; margin-bottom: 8px; display: block; color: #555; }
-        input[type="text"], input[type="email"] { 
-            width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 20px; 
-            border: 1px solid #ddd; border-radius: 8px; font-size: 16px; transition: border 0.3s;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
-        input:focus { border-color: #1a73e8; outline: none; }
-        
-        button { 
-            width: 100%; padding: 12px; border: none; border-radius: 8px; 
-            cursor: pointer; font-size: 16px; font-weight: bold; transition: background 0.3s, transform 0.1s; 
-            color: white; margin-top: 10px;
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
         }
-        button:active { transform: scale(0.98); }
-        .btn-primary { background: #1a73e8; }
-        .btn-primary:hover { background: #1557b0; }
-        
-        .status-box { margin-bottom: 20px; padding: 10px; background: #e6f4ea; border: 1px solid #ceead6; border-radius: 6px; color: #1e8e3e; }
-        .links { text-align: center; margin-top: 25px; font-size: 14px; }
-        .links a { color: #1a73e8; text-decoration: none; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #FDF8F3;
+            color: #000;
+        }
+
+        /* Grid Background Pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(200, 200, 200, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(200, 200, 200, 0.15) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Main Container */
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 40px 20px 20px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Hero Content */
+        .hero-content {
+            text-align: left;
+            margin-bottom: 16px;
+        }
+
+        .hero-title {
+            font-size: 44px;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 12px;
+            letter-spacing: -1.5px;
+        }
+
+        .hero-subtitle {
+            font-size: 15px;
+            line-height: 1.5;
+            color: #333;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .step-indicator {
+            display: inline-block;
+            padding: 8px 16px;
+            background: rgba(160, 85, 255, 0.15);
+            border: 2px solid #000;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 12px;
+            color: #A055FF;
+            box-shadow: 3px 3px 0px 0px rgba(0,0,0,1);
+            margin-bottom: 12px;
+        }
+
+        /* Status Box */
+        .status-box {
+            background: #D4EDDA;
+            border: 3px solid #000;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .status-text {
+            font-size: 14px;
+            font-weight: 700;
+            color: #155724;
+            line-height: 1.4;
+        }
+
+        .status-text b {
+            color: #000;
+        }
+
+        /* Form Card */
+        .form-card {
+            background: #F5F2FF;
+            border: 3px solid #000;
+            border-radius: 24px;
+            padding: 24px 20px;
+            box-shadow: 6px 6px 0px 0px rgba(0,0,0,1);
+            margin-bottom: 16px;
+        }
+
+        .form-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .form-icon {
+            width: 56px;
+            height: 56px;
+            background: #A055FF;
+            border: 3px solid #000;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+            flex-shrink: 0;
+            font-size: 28px;
+        }
+
+        .form-title-group h2 {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+
+        .form-subtitle {
+            font-size: 13px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* Form Fields */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: #000;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px;
+            background: #fff;
+            border: 3px solid #000;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            box-shadow: 3px 3px 0px 0px rgba(0,0,0,1);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #A055FF;
+            transform: translate(1px, 1px);
+            box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+        }
+
+        .form-input::placeholder {
+            color: #999;
+            font-weight: 500;
+        }
+
+        .input-hint {
+            font-size: 11px;
+            color: #666;
+            margin-top: 6px;
+            font-weight: 600;
+        }
+
+        /* Submit Button */
+        .submit-button {
+            width: 100%;
+            padding: 18px;
+            background: #A055FF;
+            color: #fff;
+            border: 3px solid #000;
+            border-radius: 16px;
+            font-size: 17px;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 5px 5px 0px 0px rgba(0,0,0,1);
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            margin-top: 24px;
+        }
+
+        .submit-button:active {
+            transform: translate(3px, 3px);
+            box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+        }
+
+        /* Info Card */
+        .info-card {
+            background: #fff;
+            border: 3px solid #000;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+        }
+
+        .info-title {
+            font-size: 14px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: #555;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.02);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .bounce-in {
+            animation: bounceIn 0.5s ease forwards;
+        }
+
+        /* Tablet and larger screens */
+        @media (min-width: 768px) {
+            .main-container {
+                max-width: 480px;
+                margin: 0 auto;
+            }
+
+            .hero-title {
+                font-size: 56px;
+            }
+        }
+
+        /* Very small phones */
+        @media (max-height: 667px) {
+            .hero-title {
+                font-size: 38px;
+                margin-bottom: 8px;
+            }
+
+            .main-container {
+                padding: 30px 20px 20px;
+            }
+
+            .form-card {
+                padding: 20px 18px;
+            }
+
+            .form-group {
+                margin-bottom: 14px;
+            }
+        }
+
+        /* Landscape mode */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .hero-title {
+                font-size: 32px;
+            }
+
+            .main-container {
+                padding: 20px;
+                overflow-y: scroll;
+            }
+
+            .form-card {
+                padding: 16px;
+            }
+        }
+
+        /* Validation styles */
+        .form-input:invalid:not(:placeholder-shown) {
+            border-color: #ff4444;
+        }
+
+        .form-input:valid:not(:placeholder-shown) {
+            border-color: #00cc66;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Student Registration</h1>
-        
-        <h3 style="margin-top:0;">Step 2: Account Details</h3>
-        
-        <div class="status-box">
-             ✅ ID Verified: <b>{{ enrollment }}</b>
+    <div class="content-wrapper">
+        <!-- Main Container -->
+        <div class="main-container">
+            <!-- Hero Content -->
+            <div class="hero-content fade-in-up">
+                <div class="step-indicator">📋 Step 2 of 3</div>
+                <h1 class="hero-title">ResQ</h1>
+                <p class="hero-subtitle">
+                    Complete your account details
+                </p>
+            </div>
+
+            <!-- Status Box -->
+            <div class="status-box fade-in-up" style="animation-delay: 0.1s;">
+                <span class="status-icon">✅</span>
+                <div class="status-text">
+                    ID Verified: <b>{{ enrollment }}</b>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="form-card bounce-in" style="animation-delay: 0.2s;">
+                <div class="form-header">
+                    <div class="form-icon">👤</div>
+                    <div class="form-title-group">
+                        <h2>Account Details</h2>
+                        <p class="form-subtitle">Enter your information</p>
+                    </div>
+                </div>
+
+                <form method="post" onsubmit="return validateForm()">
+                    {% csrf_token %}
+                    <!-- Hidden fields to persist data from URL to Session -->
+                    <input type="hidden" name="token" value="{{ token }}">
+                    <input type="hidden" name="enrollment" value="{{ enrollment }}">
+                    <input type="hidden" name="identity_hash" value="{{ request.GET.hash }}">
+
+                    <div class="form-group">
+                        <label for="id_name" class="form-label">Full Name</label>
+                        <input 
+                            type="text" 
+                            name="full_name" 
+                            id="id_name" 
+                            class="form-input"
+                            required 
+                            placeholder="Enter your full name"
+                            autocomplete="name"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_phone" class="form-label">Phone Number</label>
+                        <input 
+                            type="tel" 
+                            name="phone" 
+                            id="id_phone" 
+                            class="form-input"
+                            required 
+                            placeholder="10-digit phone number" 
+                            pattern="[0-9]{10}" 
+                            maxlength="10" 
+                            minlength="10"
+                            autocomplete="tel"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                        >
+                        <div class="input-hint">📱 Enter 10 digits without spaces or dashes</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_email" class="form-label">Email Address</label>
+                        <input 
+                            type="email" 
+                            name="email" 
+                            id="id_email" 
+                            class="form-input"
+                            required 
+                            placeholder="your.email@example.com"
+                            autocomplete="email"
+                        >
+                        <div class="input-hint">📧 We'll send verification to this email</div>
+                    </div>
+
+                    <button type="submit" class="submit-button">
+                        Continue to Selfie
+                    </button>
+                </form>
+            </div>
+
+            <!-- Info Card -->
+            <div class="info-card fade-in-up" style="animation-delay: 0.3s;">
+                <h3 class="info-title">🔒 Privacy Notice</h3>
+                <p class="info-text">
+                    Your information is encrypted and securely stored. We'll never share your details with third parties.
+                </p>
+            </div>
         </div>
-
-        <form method="post" onsubmit="return validatePhone()">
-            {% csrf_token %}
-            <!-- Hidden fields to persist data from URL to Session -->
-            <input type="hidden" name="token" value="{{ token }}">
-            <input type="hidden" name="enrollment" value="{{ enrollment }}">
-            <input type="hidden" name="identity_hash" value="{{ request.GET.hash }}">
-            
-            <label for="id_name">Full Name</label>
-            <input type="text" name="full_name" id="id_name" required placeholder="Enter your full name">
-
-            <label for="id_phone">Phone Number</label>
-            <input type="tel" name="phone" id="id_phone" required placeholder="Enter 10-digit phone number" 
-                   pattern="[0-9]{10}" maxlength="10" minlength="10"    
-                   style="width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;"
-                   oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-
-            <label for="id_email">Email</label>
-            <input type="email" name="email" id="id_email" required placeholder="Enter your email">
-            
-            <button type="submit" class="btn-primary">Video Selfie Verification</button>
-        </form>
-        
     </div>
 
     <script>
-        function validatePhone() {
+        function validateForm() {
             const phone = document.getElementById('id_phone').value;
-            if (phone.length !== 10) {
-                alert('Phone number must be exactly 10 digits');
+            const email = document.getElementById('id_email').value;
+            const name = document.getElementById('id_name').value;
+
+            // Validate name
+            if (name.trim().length < 2) {
+                showError('Please enter your full name');
                 return false;
             }
+
+            // Validate phone
+            if (phone.length !== 10) {
+                showError('Phone number must be exactly 10 digits');
+                return false;
+            }
+
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showError('Please enter a valid email address');
+                return false;
+            }
+
+            // Haptic feedback on success
+            if ('vibrate' in navigator) {
+                navigator.vibrate([50, 100, 50]);
+            }
+
             return true;
         }
+
+        function showError(message) {
+            alert('⚠️ ' + message);
+            
+            // Error haptic
+            if ('vibrate' in navigator) {
+                navigator.vibrate([200, 100, 200]);
+            }
+        }
+
+        // Auto-format phone number as user types
+        const phoneInput = document.getElementById('id_phone');
+        phoneInput.addEventListener('input', function(e) {
+            // Already handled by oninput in HTML, but add visual feedback
+            if (this.value.length === 10) {
+                this.style.borderColor = '#00cc66';
+            } else {
+                this.style.borderColor = '#000';
+            }
+        });
+
+        // Prevent scroll bounce on iOS
+        document.body.addEventListener('touchmove', function(e) {
+            if (!e.target.closest('.main-container')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Auto-focus first input
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                document.getElementById('id_name').focus();
+            }, 500);
+        });
     </script>
 </body>
 </html>

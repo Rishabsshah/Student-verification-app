@@ -1,150 +1,130 @@
 """
-Face embedding utility using DeepFace.
-Production-ready face recognition with deep learning models.
+Simple face verification using OpenCV + Histogram comparison.
+Fast, lightweight, perfect for hackathon prototype!
 """
-import os
-import numpy as np
-from deepface import DeepFace
 import cv2
+import numpy as np
+import os
 
 class FaceAnalysisModel:
     """
-    Face recognition using DeepFace library.
-    Uses VGG-Face model for embeddings and verification.
+    Simple face recognition using OpenCV's Haar Cascade + Histogram comparison.
+    No heavy ML models needed - fast and works offline!
     """
+    
+    # Load Haar Cascade for face detection
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     
     @classmethod
     def get_embedding(cls, image_path):
         """
-        Extract a face embedding from an image using DeepFace.
-        Returns (embedding_array, message)
+        Extract face region and compute color histogram as "embedding".
+        Returns (histogram_array, message)
         
         Args:
             image_path: Path to the image file
             
         Returns:
-            tuple: (embedding array or None, status message)
+            tuple: (histogram array or None, status message)
         """
         try:
             # Check if file exists
             if not os.path.exists(image_path):
                 return None, f"Image file not found: {image_path}"
             
-            # Read and validate image
+            # Read image
             img = cv2.imread(image_path)
             if img is None:
                 return None, "Could not read image file"
             
-            # Use DeepFace to extract embedding
-            # Model options: VGG-Face, Facenet, Facenet512, OpenFace, DeepFace, DeepID, ArcFace, Dlib, SFace
-            # VGG-Face is a good balance of accuracy and speed
-            embedding_objs = DeepFace.represent(
-                img_path=image_path,
-                model_name='VGG-Face',  # Good accuracy, widely used
-                enforce_detection=False,  # More lenient - handle glasses, angles, lighting
-                detector_backend='opencv',  # Fast detection
-                align=True  # Align face for better accuracy
+            # Convert to grayscale for face detection
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            
+            # Detect faces - VERY LENIENT settings for hackathon
+            faces = cls.face_cascade.detectMultiScale(
+                gray,
+                scaleFactor=1.1,
+                minNeighbors=3,    # LOWERED from 5 - more lenient, detects more faces
+                minSize=(20, 20)   # LOWERED from 30x30 - detects smaller/partial faces
             )
             
-            # DeepFace.represent returns a list of face embeddings
-            if not embedding_objs or len(embedding_objs) == 0:
+            if len(faces) == 0:
                 return None, "No face detected in image"
             
-            # If multiple faces, use the first one (largest/most prominent)
-            if len(embedding_objs) > 1:
-                print(f"Warning: Multiple faces detected ({len(embedding_objs)}), using the first one")
+            # If multiple faces, use the largest one
+            if len(faces) > 1:
+                print(f"Warning: {len(faces)} faces detected, using the largest")
+                # Sort by area (w*h) and take largest
+                faces = sorted(faces, key=lambda f: f[2]*f[3], reverse=True)
             
-            # Extract the embedding vector
-            embedding = np.array(embedding_objs[0]['embedding'], dtype=np.float32)
+            # Extract the face region
+            x, y, w, h = faces[0]
+            face_region = img[y:y+h, x:x+w]
             
-            return embedding, "Success"
+            # Resize face to standard size for consistent comparison
+            face_resized = cv2.resize(face_region, (100, 100))
             
-        except ValueError as e:
-            # DeepFace raises ValueError when no face is detected
-            if "Face could not be detected" in str(e) or "no face" in str(e).lower():
-                return None, "No face detected in image"
-            return None, f"Face detection error: {str(e)}"
+            # Compute color histogram (our "embedding")
+            # Using HSV color space - more robust to lighting changes
+            face_hsv = cv2.cvtColor(face_resized, cv2.COLOR_BGR2HSV)
+            
+            # Calculate histogram for each channel
+            hist_h = cv2.calcHist([face_hsv], [0], None, [50], [0, 180])  # Hue
+            hist_s = cv2.calcHist([face_hsv], [1], None, [60], [0, 256])  # Saturation
+            hist_v = cv2.calcHist([face_hsv], [2], None, [60], [0, 256])  # Value
+            
+            # Normalize histograms
+            cv2.normalize(hist_h, hist_h)
+            cv2.normalize(hist_s, hist_s)
+            cv2.normalize(hist_v, hist_v)
+            
+            # Concatenate all histograms into one feature vector
+            histogram = np.concatenate([hist_h.flatten(), hist_s.flatten(), hist_v.flatten()])
+            
+            return histogram, "Success"
             
         except Exception as e:
             return None, f"Error processing image: {str(e)}"
 
     @classmethod
-    def compute_similarity(cls, embed1, embed2):
+    def compute_similarity(cls, hist1, hist2):
         """
-        Compute cosine similarity between two embeddings.
+        Compare two histograms using correlation method.
         
         Args:
-            embed1: First embedding array
-            embed2: Second embedding array
+            hist1: First histogram array
+            hist2: Second histogram array
             
         Returns:
-            float: Similarity score between -1 and 1 (higher = more similar)
-                   For faces: typically 0.3-0.7 range
+            float: Similarity score between 0 and 1 (higher = more similar)
+                   0.0 = completely different
+                   1.0 = identical
         """
-        if embed1 is None or embed2 is None:
+        if hist1 is None or hist2 is None:
             return 0.0
         
         try:
-            v1 = np.array(embed1).flatten()
-            v2 = np.array(embed2).flatten()
+            h1 = np.array(hist1).flatten().astype(np.float32)
+            h2 = np.array(hist2).flatten().astype(np.float32)
             
             # Ensure same length
-            if len(v1) != len(v2):
-                min_len = min(len(v1), len(v2))
-                v1 = v1[:min_len]
-                v2 = v2[:min_len]
+            if len(h1) != len(h2):
+                min_len = min(len(h1), len(h2))
+                h1 = h1[:min_len]
+                h2 = h2[:min_len]
             
-            # Cosine similarity: (A · B) / (||A|| * ||B||)
-            dot_product = np.dot(v1, v2)
-            norm1 = np.linalg.norm(v1)
-            norm2 = np.linalg.norm(v2)
+            # Use correlation method - returns value between -1 and 1
+            # 1 = perfect match, 0 = no correlation, -1 = inverse
+            similarity = cv2.compareHist(h1, h2, cv2.HISTCMP_CORREL)
             
-            if norm1 == 0 or norm2 == 0:
-                return 0.0
-            
-            # Return raw cosine similarity (already in -1 to 1 range)
-            # For VGG-Face embeddings, this typically gives:
-            # - Same person: 0.4 to 0.7
-            # - Different people: -0.1 to 0.3
-            similarity = dot_product / (norm1 * norm2)
+            # Normalize to 0-1 range (clip negative values to 0)
+            similarity = max(0.0, similarity)
             
             return float(similarity)
             
         except Exception as e:
             print(f"Error computing similarity: {e}")
             return 0.0
-    
-    @classmethod
-    def verify_faces(cls, img1_path, img2_path, threshold=0.6):
-        """
-        Direct verification using DeepFace's built-in verify function.
-        This is an alternative to manual embedding + similarity computation.
-        
-        Args:
-            img1_path: Path to first image
-            img2_path: Path to second image
-            threshold: Similarity threshold (default 0.6 for VGG-Face)
-            
-        Returns:
-            dict: Verification result with 'verified' boolean and 'distance' score
-        """
-        try:
-            result = DeepFace.verify(
-                img1_path=img1_path,
-                img2_path=img2_path,
-                model_name='VGG-Face',
-                detector_backend='opencv',
-                enforce_detection=True,
-                align=True
-            )
-            return result
-            
-        except Exception as e:
-            return {
-                'verified': False,
-                'distance': 1.0,
-                'error': str(e)
-            }
 
 
 # Backward compatibility: Keep the same function names

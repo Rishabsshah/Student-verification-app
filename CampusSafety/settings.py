@@ -25,12 +25,14 @@ import os
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-denix3$4o$&-l2wh65il@j#8(dy9j6ziw9ie#$*14g@&7xt#b)')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True  # Temporarily enabled for debugging
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = [
     "<13.233.36.96>",
     "localhost",
-    "127.0.0.1"
+    "127.0.0.1",
+    ".onrender.com",  # Allow all Render subdomains
+    "*"  # For hackathon demo (remove in production)
 ]
 
 

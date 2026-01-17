@@ -1,3 +1,10 @@
+# Build Tools (CRITICAL: Must be at the top to build dlib)
+cmake
+
+# The Missing Libraries (Fixes your warning)
+dlib
+face_recognition
+
 # Django
 Django>=5.1
 djangorestframework
@@ -9,7 +16,7 @@ opencv-python-headless
 Pillow
 numpy
 
-# Face Recognition (Production)
+# DeepFace (You can keep this if your code uses it too)
 deepface
 tf-keras
 tensorflow

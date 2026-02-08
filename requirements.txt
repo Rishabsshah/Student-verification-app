@@ -17,3 +17,10 @@ numpy
 
 # HTTP Requests
 requests
+
+# Triple-Lock Verification
+thefuzz  # Fuzzy string matching for name verification
+python-Levenshtein  # C extension for faster fuzzy matching
+razorpay  # Razorpay payment integration
+cryptography  # For Aadhaar encryption
+python-decouple  # Environment variable management

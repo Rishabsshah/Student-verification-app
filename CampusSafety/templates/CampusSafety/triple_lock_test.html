@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Triple-Lock Verification Test</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .phase {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        .phase.active {
+            border-left-color: #28a745;
+            background: #e8f5e9;
+        }
+        .phase.complete {
+            opacity: 0.6;
+            border-left-color: #28a745;
+        }
+        .phase h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .progress {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            width: 0%;
+            transition: width 0.5s;
+        }
+        .hidden { display: none; }
+        #successMessage {
+            text-align: center;
+            padding: 40px;
+        }
+        #successMessage h2 {
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #28a745;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Triple-Lock Verification</h1>
+        <p class="subtitle">Test the three-phase verification system</p>
+        
+        <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <!-- Phase 1: OCR -->
+        <div class="phase active" id="phase1">
+            <h3>Phase 1: ID Card Upload</h3>
+            <input type="file" id="idCard" accept="image/*">
+            <button onclick="uploadID()">Upload & Verify ID</button>
+            <div id="ocrStatus"></div>
+        </div>
+
+        <!-- Phase 2: Aadhaar -->
+        <div class="phase" id="phase2">
+            <h3>Phase 2: Aadhaar Verification</h3>
+            <input type="text" id="aadhaar" placeholder="Enter 12-digit Aadhaar" maxlength="12">
+            <button onclick="sendOTP()" id="sendOtpBtn" disabled>Send OTP</button>
+            
+            <div id="otpSection" class="hidden">
+                <input type="text" id="otp" placeholder="Enter 6-digit OTP" maxlength="6">
+                <button onclick="verifyOTP()">Verify OTP</button>
+            </div>
+            <div id="aadhaarStatus"></div>
+        </div>
+
+        <!-- Phase 3: Payment -->
+        <div class="phase" id="phase3">
+            <h3>Phase 3: Financial Verification</h3>
+            <p style="margin-bottom: 10px; color: #666;">
+                Pay ₹1 to verify your identity<br>
+                <small>(Amount will be refunded immediately)</small>
+            </p>
+            <button onclick="initiatePayment()" id="payBtn" disabled>Pay ₹1 via Razorpay</button>
+            <div id="paymentStatus"></div>
+        </div>
+
+        <!-- Success Message -->
+        <div id="successMessage" class="hidden">
+            <div class="checkmark">✓</div>
+            <h2>All Verification Complete!</h2>
+            <p>Your identity has been verified through:</p>
+            <ul style="text-align: left; margin: 20px 0; color: #666;">
+                <li>✓ ID Card (OCR)</li>
+                <li>✓ Aadhaar (Government ID)</li>
+                <li>✓ Bank Account (UPI)</li>
+            </ul>
+            <p style="color: #28a745; font-weight: bold;">₹1 has been refunded to your account</p>
+        </div>
+    </div>
+
+    <script>
+        let sessionToken = null;
+        let orderData = null;
+
+        function showStatus(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function updateProgress(percentage) {
+            document.getElementById('progressBar').style.width = percentage + '%';
+        }
+
+        async function uploadID() {
+            const file = document.getElementById('idCard').files[0];
+            if (!file) {
+                showStatus('ocrStatus', 'Please select a file', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('id_card', file);
+
+            try {
+                showStatus('ocrStatus', 'Processing ID card...', 'info');
+                const response = await fetch('/verification/inspect-id/', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    sessionToken = data.session_token;
+                    showStatus('ocrStatus', `✓ Verified: ${data.ocr_data.name}`, 'success');
+                    
+                    // Move to phase 2
+                    document.getElementById('phase1').classList.add('complete');
+                    document.getElementById('phase2').classList.add('active');
+                    document.getElementById('sendOtpBtn').disabled = false;
+                    updateProgress(33);
+                } else {
+                    showStatus('ocrStatus', 'Error: ' + (data.error || 'Verification failed'), 'error');
+                }
+            } catch (error) {
+                showStatus('ocrStatus', 'Network error: ' + error.message, 'error');
+            }
+        }
+
+        async function sendOTP() {
+            const aadhaar = document.getElementById('aadhaar').value;
+            if (aadhaar.length !== 12) {
+                showStatus('aadhaarStatus', 'Please enter valid 12-digit Aadhaar', 'error');
+                return;
+            }
+
+            try {
+                showStatus('aadhaarStatus', 'Sending OTP...', 'info');
+                const response = await fetch('/verification/api/aadhaar/send-otp/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        session_token: sessionToken,
+                        aadhaar_number: aadhaar
+                    })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus('aadhaarStatus', `✓ OTP sent to ${data.masked_mobile}`, 'success');
+                    document.getElementById('otpSection').classList.remove('hidden');
+                } else {
+                    showStatus('aadhaarStatus', 'Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('aadhaarStatus', 'Network error: ' + error.message, 'error');
+            }
+        }
+
+        async function verifyOTP() {
+            const otp = document.getElementById('otp').value;
+            if (otp.length !== 6) {
+                showStatus('aadhaarStatus', 'Please enter valid 6-digit OTP', 'error');
+                return;
+            }
+
+            try {
+                showStatus('aadhaarStatus', 'Verifying OTP...', 'info');
+                const response = await fetch('/verification/api/aadhaar/verify-otp/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        session_token: sessionToken,
+                        otp: otp
+                    })
+                });
+                const data = await response.json();
+                
+                if (data.success && data.matched) {
+                    showStatus('aadhaarStatus', 
+                        `✓ Aadhaar verified! Match score: ${data.match_score}%`, 
+                        'success'
+                    );
+                    
+                    // Move to phase 3
+                    document.getElementById('phase2').classList.add('complete');
+                    document.getElementById('phase3').classList.add('active');
+                    document.getElementById('payBtn').disabled = false;
+                    updateProgress(66);
+                } else {
+                    showStatus('aadhaarStatus', 'Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('aadhaarStatus', 'Network error: ' + error.message, 'error');
+            }
+        }
+
+        async function initiatePayment() {
+            try {
+                showStatus('paymentStatus', 'Creating payment order...', 'info');
+                const response = await fetch('/verification/api/payment/create-order/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_token: sessionToken})
+                });
+                orderData = await response.json();
+                
+                if (orderData.success) {
+                    showStatus('paymentStatus', 'Opening Razorpay...', 'info');
+                    
+                    const options = {
+                        key: orderData.razorpay_key_id,
+                        amount: orderData.amount,
+                        currency: orderData.currency,
+                        order_id: orderData.order_id,
+                        name: 'Student Verification',
+                        description: 'Triple-Lock Verification (₹1 - Refundable)',
+                        handler: async function(response) {
+                            await verifyPayment(response);
+                        },
+                        theme: { color: '#667eea' }
+                    };
+                    const rzp = new Razorpay(options);
+                    rzp.open();
+                } else {
+                    showStatus('paymentStatus', 'Error: ' + orderData.error, 'error');
+                }
+            } catch (error) {
+                showStatus('paymentStatus', 'Network error: ' + error.message, 'error');
+            }
+        }
+
+        async function verifyPayment(razorpayResponse) {
+            try {
+                showStatus('paymentStatus', 'Verifying payment...', 'info');
+                const response = await fetch('/verification/api/payment/verify/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        session_token: sessionToken,
+                        razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+                        razorpay_order_id: razorpayResponse.razorpay_order_id,
+                        razorpay_signature: razorpayResponse.razorpay_signature
+                    })
+                });
+                const data = await response.json();
+                
+                if (data.success && data.verification_complete) {
+                    showStatus('paymentStatus', 
+                        `✓ Payment verified! Match score: ${data.match_score}%`, 
+                        'success'
+                    );
+                    
+                    // Show success
+                    document.getElementById('phase3').classList.add('complete');
+                    updateProgress(100);
+                    
+                    setTimeout(() => {
+                        document.getElementById('phase1').classList.add('hidden');
+                        document.getElementById('phase2').classList.add('hidden');
+                        document.getElementById('phase3').classList.add('hidden');
+                        document.getElementById('successMessage').classList.remove('hidden');
+                    }, 1000);
+                } else {
+                    showStatus('paymentStatus', 'Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('paymentStatus', 'Network error: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

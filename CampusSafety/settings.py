@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-from pathlib import Path
+from pathlib import Path 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -157,3 +157,60 @@ MEDIA_ROOT = BASE_DIR / "media"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ==================== Triple-Lock Verification Settings ====================
+
+try:
+    from decouple import config as env_config
+    
+    # Aadhaar encryption key (required for Triple-Lock verification)
+    _encryption_key = env_config('AADHAAR_ENCRYPTION_KEY', default=None)
+    if _encryption_key:
+        AADHAAR_ENCRYPTION_KEY = _encryption_key.encode('utf-8')
+    else:
+        # Generate a temporary key for development (NOT for production!)
+        if DEBUG:
+            from cryptography.fernet import Fernet
+            AADHAAR_ENCRYPTION_KEY = Fernet.generate_key()
+            print("⚠️  WARNING: Using temporary Aadhaar encryption key. Set AADHAAR_ENCRYPTION_KEY in .env for production!")
+        else:
+            raise ValueError("AADHAAR_ENCRYPTION_KEY must be set in production!")
+except ImportError:
+    # python-decouple not installed, use environment variables directly
+    _encryption_key = os.environ.get('AADHAAR_ENCRYPTION_KEY')
+    if _encryption_key:
+        AADHAAR_ENCRYPTION_KEY = _encryption_key.encode('utf-8')
+    elif DEBUG:
+        from cryptography.fernet import Fernet
+        AADHAAR_ENCRYPTION_KEY = Fernet.generate_key()
+        print("⚠️  WARNING: Using temporary Aadhaar encryption key.")
+
+# Session configuration for multi-step verification
+SESSION_COOKIE_AGE = 1800  # 30 minutes
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_SECURE = not DEBUG  # True in production (HTTPS)
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'verification': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+    },
+}
+

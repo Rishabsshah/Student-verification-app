@@ -377,7 +377,12 @@
             <div class="status-box fade-in-up" style="animation-delay: 0.1s;">
                 <span class="status-icon">✅</span>
                 <div class="status-text">
-                    ID Verified: <b>{{ enrollment }}</b>
+                    {% if student_name %}
+                        ID Verified: <b>{{ student_name }}</b><br>
+                        <small style="font-size: 12px; opacity: 0.8;">Enrollment: {{ enrollment }}</small>
+                    {% else %}
+                        ID Verified: <b>{{ enrollment }}</b>
+                    {% endif %}
                 </div>
             </div>
 
@@ -397,6 +402,7 @@
                     <input type="hidden" name="token" value="{{ token }}">
                     <input type="hidden" name="enrollment" value="{{ enrollment }}">
                     <input type="hidden" name="identity_hash" value="{{ request.GET.hash }}">
+                    <input type="hidden" name="session_token" value="{{ request.GET.session_token }}">
 
                     <div class="form-group">
                         <label for="id_name" class="form-label">Full Name</label>

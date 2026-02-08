@@ -53,6 +53,7 @@ class User(AbstractUser):
         help_text="Student's 10-digit phone number"
     )
 
+
     # Selfie for manual review
     selfie_image = models.ImageField(
         upload_to='student_selfies/',
@@ -60,6 +61,27 @@ class User(AbstractUser):
         blank=True,
         help_text="Captured video selfie for admin review"
     )
+
+    # Triple-Lock Verification Fields
+    upi_id = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Student's UPI ID for financial verification"
+    )
+    
+    address = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Student's address from Aadhaar"
+    )
+    
+    date_of_birth = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Student's date of birth from Aadhaar"
+    )
+
 
     def __str__(self):
         return f"{self.username} ({self.enrollment_number or 'No enrollment'})"

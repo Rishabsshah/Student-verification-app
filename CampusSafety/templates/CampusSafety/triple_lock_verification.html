@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ResQ - Triple-Lock Verification</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+            background: #FDF8F3;
+            color: #000;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        /* Grid Background Pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(200, 200, 200, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(200, 200, 200, 0.15) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 40px;
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            width: 100%;
+        }
+
+        /* Hero Content */
+        .hero-content {
+            text-align: left;
+            margin-bottom: 24px;
+        }
+
+        .hero-title {
+            font-size: 44px;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 12px;
+            letter-spacing: -1.5px;
+        }
+
+        .step-indicator {
+            display: inline-block;
+            padding: 8px 16px;
+            background: rgba(160, 85, 255, 0.15);
+            border: 2px solid #000;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 12px;
+            color: #A055FF;
+            box-shadow: 3px 3px 0px 0px rgba(0,0,0,1);
+            margin-bottom: 16px;
+        }
+
+        /* Progress Bar */
+        .progress-section {
+            margin-bottom: 24px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 800;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .progress-bar-container {
+            height: 14px;
+            background: #fff;
+            border: 3px solid #000;
+            border-radius: 50px;
+            overflow: hidden;
+            box-shadow: 3px 3px 0px 0px rgba(0,0,0,1);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #A055FF;
+            width: 0%;
+            transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Verification Phase Cards */
+        .phase-card {
+            background: #fff;
+            border: 3px solid #000;
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 6px 6px 0px 0px rgba(0,0,0,1);
+            transition: all 0.3s ease;
+            position: relative;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .phase-card.active {
+            opacity: 1;
+            pointer-events: all;
+            background: #F5F2FF;
+        }
+
+        .phase-card.complete {
+            opacity: 0.8;
+            background: #E8F5E9;
+            pointer-events: none;
+        }
+
+        .phase-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .phase-icon {
+            width: 48px;
+            height: 48px;
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 3px 3px 0px 0px rgba(0,0,0,1);
+        }
+
+        .active .phase-icon {
+            background: #A055FF;
+            color: #fff;
+        }
+
+        .complete .phase-icon {
+            background: #00cc66;
+            color: #fff;
+        }
+
+        .phase-title-group h3 {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 2px;
+        }
+
+        .phase-subtitle {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 3px solid #000;
+            border-radius: 12px;
+            background: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: inherit;
+            box-shadow: 3px 3px 0px 0px rgba(0,0,0,1);
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #A055FF;
+            transform: translate(1px, 1px);
+            box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+        }
+
+        .action-button {
+            width: 100%;
+            padding: 16px;
+            background: #A055FF;
+            color: #fff;
+            border: 3px solid #000;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .action-button:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+        }
+
+        .action-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+        }
+
+        /* Status & Feedback */
+        .status-box {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border: 2px solid #000;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            display: none;
+            gap: 10px;
+            align-items: center;
+            box-shadow: 3px 3px 0px 0px rgba(0,0,0,1);
+        }
+
+        .status-box.active {
+            display: flex;
+        }
+
+        .status-box.info { background: #E3F2FD; color: #1976D2; }
+        .status-box.success { background: #E8F5E9; color: #2E7D32; }
+        .status-box.error { background: #FFEBEE; color: #C62828; }
+
+        .hidden { display: none; }
+
+        /* Success State */
+        .success-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #FDF8F3;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: #00cc66;
+            border: 4px solid #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            color: #fff;
+            margin-bottom: 24px;
+            box-shadow: 8px 8px 0px 0px rgba(0,0,0,1);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        .success-title { font-size: 32px; font-weight: 900; margin-bottom: 12px; }
+        .success-text { font-size: 16px; font-weight: 600; color: #666; margin-bottom: 32px; }
+
+        /* Loader */
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .hero-title { font-size: 38px; }
+            .phase-card { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="content-wrapper">
+        <div class="main-container">
+            <div class="hero-content">
+                <div class="step-indicator">🔒 Triple-Lock Verification</div>
+                <h1 class="hero-title">ResQ</h1>
+                <p style="font-weight: 600; color: #555; margin-top: 8px;">
+                    We match your ID, Aadhaar, and Bank data for ultimate safety.
+                </p>
+            </div>
+
+            <div class="progress-section">
+                <div class="progress-label">
+                    <span>Identity Strength</span>
+                    <span id="progress-percent">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="main-progress-bar"></div>
+                </div>
+            </div>
+
+            <!-- Phase 1: OCR (Auto-Complete since it's done) -->
+            <div class="phase-card complete" id="phase-ocr">
+                <div class="phase-header">
+                    <div class="phase-icon">✓</div>
+                    <div class="phase-title-group">
+                        <h3>ID Card Verified</h3>
+                        <p class="phase-subtitle">{{ ocr_data.name }} ({{ ocr_data.college }})</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phase 2: Aadhaar -->
+            <div class="phase-card active" id="phase-aadhaar">
+                <div class="phase-header">
+                    <div class="phase-icon">🆔</div>
+                    <div class="phase-title-group">
+                        <h3>Aadhaar Link</h3>
+                        <p class="phase-subtitle">Step 2: Government Identity Match</p>
+                    </div>
+                </div>
+
+                <div id="aadhaar-form">
+                    <div class="form-group">
+                        <label class="form-label">Aadhaar Number</label>
+                        <input type="text" id="aadhaar-input" class="form-input" placeholder="12-digit Aadhaar Number" maxlength="12" pattern="\d*">
+                    </div>
+                    <button id="send-otp-btn" class="action-button" onclick="sendOTP()">
+                        Send Verification OTP 📲
+                    </button>
+                    
+                    <div id="otp-group" class="hidden" style="margin-top: 20px;">
+                        <div class="form-group">
+                            <label class="form-label">Enter 6-digit OTP</label>
+                            <input type="text" id="otp-input" class="form-input" placeholder="000000" maxlength="6">
+                        </div>
+                        <button id="verify-otp-btn" class="action-button" onclick="verifyOTP()">
+                            Verify Aadhaar 🛡️
+                        </button>
+                    </div>
+                </div>
+
+                <div id="aadhaar-status" class="status-box"></div>
+            </div>
+
+            <!-- Phase 3: Financial -->
+            <div class="phase-card" id="phase-payment">
+                <div class="phase-header">
+                    <div class="phase-icon">💳</div>
+                    <div class="phase-title-group">
+                        <h3>Financial Sync</h3>
+                        <p class="phase-subtitle">Step 3: Bank Identity Verification</p>
+                    </div>
+                </div>
+
+                <div id="payment-content">
+                    <p style="font-size: 13px; font-weight: 600; color: #555; margin-bottom: 20px; line-height: 1.5;">
+                        Pay <b>₹1 via UPI</b> to extract your bank name. <br>
+                        <span style="color: #00cc66;">✓ This ₹1 is refunded automatically.</span>
+                    </p>
+                    <button id="pay-btn" class="action-button" onclick="initiatePayment()">
+                        Verify via ₹1 Payment 🚀
+                    </button>
+                </div>
+
+                <div id="payment-status" class="status-box"></div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <p style="font-size: 11px; color: #888; font-weight: 500;">
+                    🛡️ Your data is encrypted with AES-256 and never shared.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Overlay -->
+    <div class="success-overlay" id="success-overlay">
+        <div class="success-icon">✓</div>
+        <h2 class="success-title">Identity Triple-Locked!</h2>
+        <p class="success-text">Your ID, Aadhaar, and Bank records match perfectly.</p>
+        <button class="action-button" onclick="proceedToSignup()" style="max-width: 300px; background: #00cc66;">
+            Setup Your Password 🚀
+        </button>
+    </div>
+
+    <script>
+        const sessionToken = "{{ session_token }}";
+        let currentProgress = 33;
+        
+        // UI Helpers
+        function setStatus(phase, message, type) {
+            const statusBox = document.getElementById(phase + '-status');
+            statusBox.innerHTML = `<span>${type === 'info' ? '⏳' : type === 'success' ? '✅' : '❌'}</span> <span>${message}</span>`;
+            statusBox.className = `status-box active ${type}`;
+        }
+
+        function updateProgress(p) {
+            currentProgress = p;
+            document.getElementById('main-progress-bar').style.width = p + '%';
+            document.getElementById('progress-percent').innerText = Math.round(p) + '%';
+        }
+
+        // Initialize progress
+        updateProgress(33);
+
+        // --- Aadhaar Phase ---
+        async function sendOTP() {
+            const aadhaar = document.getElementById('aadhaar-input').value;
+            if (aadhaar.length !== 12) {
+                setStatus('aadhaar', 'Enter a valid 12-digit Aadhaar number', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('send-otp-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loader"></div> Sending OTP...';
+            
+            try {
+                const res = await fetch("{% url 'aadhaar_send_otp' %}", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                    body: JSON.stringify({session_token: sessionToken, aadhaar_number: aadhaar})
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    setStatus('aadhaar', `OTP sent to linked mobile (${data.masked_mobile})`, 'info');
+                    document.getElementById('otp-group').classList.remove('hidden');
+                    btn.classList.add('hidden');
+                } else {
+                    setStatus('aadhaar', data.error || 'Failed to send OTP', 'error');
+                    btn.disabled = false;
+                    btn.innerText = 'Send Verification OTP 📲';
+                }
+            } catch (err) {
+                setStatus('aadhaar', 'Network error. Try again.', 'error');
+                btn.disabled = false;
+                btn.innerText = 'Send Verification OTP 📲';
+            }
+        }
+
+        async function verifyOTP() {
+            const otp = document.getElementById('otp-input').value;
+            if (otp.length !== 6) {
+                setStatus('aadhaar', 'Enter 6-digit OTP', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('verify-otp-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loader"></div> Verifying...';
+
+            try {
+                const res = await fetch("{% url 'aadhaar_verify_otp' %}", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                    body: JSON.stringify({session_token: sessionToken, otp: otp})
+                });
+                const data = await res.json();
+
+                if (data.success && data.matched) {
+                    setStatus('aadhaar', `Name Match: ${data.match_score}%`, 'success');
+                    
+                    // Mark phase as complete
+                    const card = document.getElementById('phase-aadhaar');
+                    card.classList.remove('active');
+                    card.classList.add('complete');
+                    card.querySelector('.phase-icon').innerText = '✓';
+                    
+                    // Activate next phase
+                    document.getElementById('phase-payment').classList.add('active');
+                    updateProgress(66);
+                    
+                    // Haptic feedback
+                    if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
+                } else {
+                    setStatus('aadhaar', data.error || 'Identity mismatch', 'error');
+                    btn.disabled = false;
+                    btn.innerText = 'Verify Aadhaar 🛡️';
+                }
+            } catch (err) {
+                setStatus('aadhaar', 'Server error. Try again.', 'error');
+                btn.disabled = false;
+                btn.innerText = 'Verify Aadhaar 🛡️';
+            }
+        }
+
+        // --- Payment Phase ---
+        async function initiatePayment() {
+            const btn = document.getElementById('pay-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loader"></div> Requesting Secure Payment...';
+
+            try {
+                const res = await fetch("{% url 'payment_create_order' %}", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                    body: JSON.stringify({session_token: sessionToken})
+                });
+                const orderData = await res.json();
+
+                if (orderData.success) {
+                    const options = {
+                        key: orderData.razorpay_key_id,
+                        amount: orderData.amount,
+                        currency: orderData.currency,
+                        order_id: orderData.order_id,
+                        name: 'ResQ Identity Check',
+                        description: 'Triple-Lock Verification (₹1 Refundable)',
+                        handler: async function(response) {
+                            await verifyPayment(response);
+                        },
+                        prefill: {
+                            name: "{{ ocr_data.name }}",
+                        },
+                        theme: { color: '#A055FF' }
+                    };
+                    const rzp = new Razorpay(options);
+                    rzp.open();
+                    
+                    btn.innerHTML = 'Complete UPI Payment 📱';
+                    btn.disabled = false;
+                } else {
+                    setStatus('payment', orderData.error || 'Order creation failed', 'error');
+                    btn.disabled = false;
+                    btn.innerText = 'Verify via ₹1 Payment 🚀';
+                }
+            } catch (err) {
+                setStatus('payment', 'Connection error.', 'error');
+                btn.disabled = false;
+                btn.innerText = 'Verify via ₹1 Payment 🚀';
+            }
+        }
+
+        async function verifyPayment(rzpRes) {
+            setStatus('payment', 'Verifying Bank Name Match...', 'info');
+            
+            try {
+                const res = await fetch("{% url 'payment_verify' %}", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                    body: JSON.stringify({
+                        session_token: sessionToken,
+                        razorpay_payment_id: rzpRes.razorpay_payment_id,
+                        razorpay_order_id: rzpRes.razorpay_order_id,
+                        razorpay_signature: rzpRes.razorpay_signature
+                    })
+                });
+                const data = await res.json();
+
+                if (data.success && data.verification_complete) {
+                    setStatus('payment', `Bank Match: ${data.match_score}%`, 'success');
+                    
+                    // Mark as complete
+                    const card = document.getElementById('phase-payment');
+                    card.classList.remove('active');
+                    card.classList.add('complete');
+                    card.querySelector('.phase-icon').innerText = '✓';
+                    
+                    updateProgress(100);
+                    
+                    // Show success overlay
+                    setTimeout(() => {
+                        document.getElementById('success-overlay').style.display = 'flex';
+                    }, 800);
+                    
+                } else {
+                    setStatus('payment', data.error || 'Bank name mismatch.', 'error');
+                }
+            } catch (err) {
+                setStatus('payment', 'Verification failed. Contact support.', 'error');
+            }
+        }
+
+        function proceedToSignup() {
+            window.location.href = "{% url 'signup_final_page' %}";
+        }
+    </script>
+</body>
+</html>

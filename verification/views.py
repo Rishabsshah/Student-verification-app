@@ -145,12 +145,31 @@ def inspect_id_card(request):
         if User.objects.filter(enrollment_number=enrollment).exists():
              return Response({'valid': False, 'message': 'Enrollment number already registered'}, status=200)
              
+        # Initialize Triple-Lock session state
+        import uuid
+        session_token = str(uuid.uuid4())
+        request.session['triple_lock_state'] = {
+            'session_token': session_token,
+            'ocr_verified': True,
+            'ocr_data': {
+                'name': name,
+                'enrollment': enrollment,
+                'college': college
+            },
+            'current_phase': 'AADHAAR',
+            'aadhaar_verified': False,
+            'payment_verified': False,
+            'verification_complete': False
+        }
+        request.session.modified = True
+
         return Response({
             'valid': True, 
             'college': college, 
             'enrollment': enrollment,
             'identity_hash': identity_hash,
             'id_card_token': 'insightface_session', 
+            'session_token': session_token,
             'message': 'ID Verified. Please proceed to selfie verification.'
         })
         
@@ -385,6 +404,14 @@ def account_details_page(request):
             request.session['id_card_token'] = token
             
         if identity_hash: request.session['identity_hash'] = identity_hash
+
+        # Persist Triple-Lock Session Token
+        triple_lock_token = request.POST.get('session_token')
+        if triple_lock_token:
+            # We already initialized triple_lock_state in inspect_id_card, 
+            # just ensuring the token stays in session if the frontend passes it back.
+            if 'triple_lock_state' not in request.session:
+                request.session['triple_lock_state'] = {'session_token': triple_lock_token}
         
         return redirect('selfie_check_page')
 
@@ -394,9 +421,14 @@ def account_details_page(request):
         # For now, let's keep it but show a warning in template if needed
         pass
 
+    # Get student name from triple_lock_state if available
+    triple_lock_state = request.session.get('triple_lock_state', {})
+    student_name = triple_lock_state.get('ocr_data', {}).get('name', '')
+
     return render(request, 'CampusSafety/account_details.html', {
         'enrollment': enrollment if enrollment else "Pending...",
-        'token': token
+        'token': token,
+        'student_name': student_name
     })
 
 # --- Step 3: Selfie Check Page ---
@@ -422,13 +454,41 @@ def selfie_check_page(request):
         'token': token
     })
 
-# --- Step 4: Final Signup Page ---
+# --- Step 4: Triple-Lock Verification Page ---
+def triple_lock_page(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    
+    triple_lock_state = request.session.get('triple_lock_state')
+    if not triple_lock_state:
+        return redirect('id_verification_page')
+    
+    # Check if selfie was successful
+    if request.session.get('verification_status') != 'VERIFIED':
+        return redirect('selfie_check_page')
+        
+    return render(request, 'CampusSafety/triple_lock_verification.html', {
+        'session_token': triple_lock_state.get('session_token'),
+        'ocr_data': triple_lock_state.get('ocr_data')
+    })
+
+# --- Step 5: Final Signup Page ---
 def signup_final_page(request):
     from accounts.forms import PasswordOnlyForm
     from accounts.models import User
     
     if request.user.is_authenticated:
         return redirect('dashboard')
+
+    # Ensure Triple-Lock is complete
+    triple_lock_state = request.session.get('triple_lock_state')
+    # Use a bypass for testing if needed, but for production it must be complete
+    # HACKATHON_BYPASS = True 
+    HACKATHON_BYPASS = False 
+    
+    if not HACKATHON_BYPASS:
+        if not triple_lock_state or not triple_lock_state.get('verification_complete'):
+            return redirect('triple_lock_page')
 
     if request.method == 'POST':
         form = PasswordOnlyForm(request.POST)
@@ -453,7 +513,10 @@ def signup_final_page(request):
                 phone_number=request.session.get('signup_phone'),
                 enrollment_number=request.session.get('enrollment'),
                 identity_hash=request.session.get('identity_hash'),
-                verification_status=request.session.get('verification_status', 'VERIFIED')
+                verification_status=request.session.get('verification_status', 'VERIFIED'),
+                upi_id=triple_lock_state.get('payment_data', {}).get('vpa'),
+                address=triple_lock_state.get('aadhaar_data', {}).get('address'),
+                date_of_birth=triple_lock_state.get('aadhaar_data', {}).get('dob')
             )
             user.set_password(form.cleaned_data['password1'])
             
@@ -469,6 +532,32 @@ def signup_final_page(request):
                     print(f"Error saving selfie: {e}")
 
             user.save()
+
+            # Create detailed record in TripleLockVerification model if needed
+            from verification.models import TripleLockVerification
+            try:
+                tlv = TripleLockVerification.objects.create(
+                    user=user,
+                    ocr_name=triple_lock_state.get('ocr_data', {}).get('name'),
+                    ocr_enrollment=triple_lock_state.get('ocr_data', {}).get('enrollment'),
+                    ocr_college=triple_lock_state.get('ocr_data', {}).get('college'),
+                    aadhaar_name=triple_lock_state.get('aadhaar_data', {}).get('name'),
+                    aadhaar_dob=triple_lock_state.get('aadhaar_data', {}).get('dob'),
+                    aadhaar_match_score=triple_lock_state.get('aadhaar_data', {}).get('match_score'),
+                    upi_payer_name=triple_lock_state.get('payment_data', {}).get('payer_name'),
+                    upi_match_score=triple_lock_state.get('payment_data', {}).get('match_score'),
+                    razorpay_payment_id=triple_lock_state.get('payment_data', {}).get('payment_id'),
+                    ocr_verified=triple_lock_state.get('ocr_verified', False),
+                    aadhaar_verified=triple_lock_state.get('aadhaar_verified', False),
+                    upi_verified=triple_lock_state.get('payment_verified', False),
+                    verification_status='VERIFIED'
+                )
+                # Store Aadhaar number encrypted
+                if triple_lock_state.get('aadhaar_number'):
+                    tlv.set_aadhaar_number(triple_lock_state.get('aadhaar_number'))
+                    tlv.save()
+            except Exception as e:
+                print(f"Error creating TripleLockVerification record: {e}")
             
             # Send signup data to external ResQ server
             import requests

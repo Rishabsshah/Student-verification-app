@@ -31,6 +31,8 @@ urlpatterns = [
     path('account-details/', account_details_page, name='account_details_page'),
     path('selfie-check/', selfie_check_page, name='selfie_check_page'),
     path('complete-signup/', signup_final_page, name='signup_final'),
+    path('triple-lock-test/', views.triple_lock_test, name='triple_lock_test'),  # Test page
     path('api/accounts/', include('accounts.urls')),
     path('api/verification/', include('verification.urls')),
+    path('verification/', include('verification.urls')),  # Also include under /verification/
 ]

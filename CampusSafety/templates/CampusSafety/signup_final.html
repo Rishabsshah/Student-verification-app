@@ -115,6 +115,14 @@
             <form method="post" onsubmit="return validatePassword()">
                 {% csrf_token %}
 
+                {% if messages %}
+                <div class="error-box">
+                    {% for message in messages %}
+                        <p>❌ {{ message }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
                 {% if form.errors %}
                 <div class="error-box">
                     {% for field in form %}{% for error in field.errors %}<p>❌ {{ error }}</p>{% endfor %}{% endfor %}

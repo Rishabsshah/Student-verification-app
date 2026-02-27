@@ -672,6 +672,46 @@ def signup_final_page(request):
                 except Exception as e:
                     print(f"Error saving selfie: {e}")
 
+            # ── EXTERNAL SIGNUP API CHECK BEFORE SAVING ────────────────────────────
+            import requests
+            from django.contrib import messages
+            
+            full_name_str = (ocr_first_name + " " + ocr_last_name).strip()
+            # Try to get the real Aadhaar or fallback to the provided test number
+            aadhaar_number = triple_lock_state.get('aadhaar_number')
+            if not aadhaar_number or len(aadhaar_number) != 12:
+                aadhaar_number = "987612345878"
+                
+            try:
+                external_signup_url = "https://rokda-exe.onrender.com/accounts/api/student-signup/"
+                payload = {
+                    "username": email.split('@')[0],
+                    "email": email,
+                    "password": form.cleaned_data['password1'],
+                    "full_name": full_name_str if full_name_str else "Student User",
+                    "aadhaar_number": aadhaar_number
+                }
+                response = requests.post(external_signup_url, json=payload, timeout=15)
+                
+                if response.status_code != 201:
+                    print(f"❌ External API Error: {response.status_code} - {response.text}")
+                    try:
+                        err_data = response.json()
+                        err_msg = err_data.get('error') or "Failed to complete signup with external service."
+                    except:
+                        err_msg = "Failed to complete signup with external service."
+                        
+                    messages.error(request, err_msg)
+                    # Return to page without saving user
+                    return render(request, 'CampusSafety/signup_final.html', {'form': form})
+                    
+                print(f"✅ External API Success: Student registered at rokda-exe.onrender.com")
+            except requests.exceptions.RequestException as e:
+                print(f"❌ External API Network Exception: {e}")
+                messages.error(request, "Network error while connecting to verification server. Please try again.")
+                return render(request, 'CampusSafety/signup_final.html', {'form': form})
+
+            # ── PROCEED WITH SAVING USER ONLY IF API RETURNS 201 ─────────────────────
             user.save()
 
             # Create detailed record in TripleLockVerification model if needed

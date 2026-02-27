@@ -467,6 +467,7 @@
             try {
                 const res = await fetch("{% url 'aadhaar_send_otp' %}", {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
                     body: JSON.stringify({session_token: sessionToken, aadhaar_number: aadhaar})
                 });
@@ -502,6 +503,7 @@
             try {
                 const res = await fetch("{% url 'aadhaar_verify_otp' %}", {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
                     body: JSON.stringify({session_token: sessionToken, otp: otp})
                 });
@@ -543,6 +545,7 @@
             try {
                 const res = await fetch("{% url 'payment_create_order' %}", {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
                     body: JSON.stringify({session_token: sessionToken})
                 });
@@ -587,6 +590,7 @@
             try {
                 const res = await fetch("{% url 'payment_verify' %}", {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
                     body: JSON.stringify({
                         session_token: sessionToken,

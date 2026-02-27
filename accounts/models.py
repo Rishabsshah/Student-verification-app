@@ -53,6 +53,14 @@ class User(AbstractUser):
         help_text="Student's 10-digit phone number"
     )
 
+    # Aadhaar number for identity linking (12 digits)
+    aadhar_number = models.CharField(
+        max_length=12,
+        null=True,
+        blank=True,
+        help_text="Student's 12-digit Aadhaar number"
+    )
+
 
     # Selfie for manual review
     selfie_image = models.ImageField(

@@ -3,6 +3,95 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+import re
+
+
+@api_view(['POST'])
+def student_signup_api(request):
+    """
+    API endpoint for minimal student signup.
+
+    Required fields:
+        - username
+        - email
+        - password
+        - full_name
+        - aadhar_number  (12-digit Aadhaar number)
+
+    Optional fields:
+        - phone_number
+        - enrollment_number
+
+    Returns 201 on success with token and user details.
+    """
+    data = request.data
+
+    # ── Required field validation ──────────────────────────────────────────────
+    required = ['username', 'email', 'password', 'full_name', 'aadhar_number']
+    missing = [f for f in required if not data.get(f, '').strip()]
+    if missing:
+        return Response(
+            {'error': f"Missing required fields: {', '.join(missing)}"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    username      = data['username'].strip()
+    email         = data['email'].strip()
+    password      = data['password']
+    full_name     = data['full_name'].strip()
+    aadhar_number = data['aadhar_number'].strip()
+
+    # ── Aadhar format validation (exactly 12 digits) ──────────────────────────
+    if not re.fullmatch(r'\d{12}', aadhar_number):
+        return Response(
+            {'error': 'aadhar_number must be exactly 12 digits'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # ── Duplicate checks ───────────────────────────────────────────────────────
+    from .models import User
+    if User.objects.filter(username=username).exists():
+        return Response(
+            {'error': 'Username already taken'},
+            status=status.HTTP_409_CONFLICT
+        )
+    if User.objects.filter(email=email).exists():
+        return Response(
+            {'error': 'Email already registered'},
+            status=status.HTTP_409_CONFLICT
+        )
+
+    # ── Create user ────────────────────────────────────────────────────────────
+    # Split full_name into first/last for Django's AbstractUser
+    name_parts = full_name.split(' ', 1)
+    first_name = name_parts[0]
+    last_name  = name_parts[1] if len(name_parts) > 1 else ''
+
+    user = User.objects.create_user(
+        username=username,
+        email=email,
+        password=password,
+        first_name=first_name,
+        last_name=last_name,
+        aadhar_number=aadhar_number,
+        phone_number=data.get('phone_number', '').strip() or None,
+        enrollment_number=data.get('enrollment_number', '').strip() or None,
+        verification_status='REVIEW',   # always starts under review
+    )
+
+    # Issue an auth token immediately so the client can authenticate follow-up calls
+    token, _ = Token.objects.get_or_create(user=user)
+
+    return Response({
+        'message': 'Student registered successfully',
+        'user_id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'full_name': f"{user.first_name} {user.last_name}".strip(),
+        'aadhar_number': user.aadhar_number,
+        'verification_status': user.verification_status,
+        'token': token.key,
+    }, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])

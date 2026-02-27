@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Scholarship — Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --black: #111; --white: #fff;
+            --green: #00E676; --lime: #C6F135;
+            --yellow: #FFE500; --red: #FF3535; --orange: #FF6B00;
+            --border: 3px solid var(--black);
+            --shadow: 4px 4px 0px var(--black); --shadow-lg: 6px 6px 0px var(--black);
+        }
+        body { font-family: 'Space Grotesk', sans-serif; background: #F9F9F9; color: var(--black); min-height: 100vh; }
+        body::before { content: ''; position: fixed; inset: 0; background-image: radial-gradient(circle, #111 1px, transparent 1px); background-size: 24px 24px; opacity: 0.04; pointer-events: none; z-index: 0; }
+
+        /* Header */
+        header {
+            position: sticky; top: 0; z-index: 100;
+            background: var(--black); border-bottom: var(--border);
+            padding: 14px 40px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .header-brand { color: var(--green); font-size: 22px; font-weight: 800; letter-spacing: -1px; }
+        .header-brand span { color: rgba(255,255,255,0.5); font-weight: 400; font-size: 13px; margin-left: 10px; }
+        .header-right { display: flex; align-items: center; gap: 10px; }
+        .admin-pill { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.15); border-radius: 50px; padding: 6px 14px; color: var(--white); font-size: 13px; font-weight: 700; }
+        .admin-avatar { width: 28px; height: 28px; background: var(--green); border: 2px solid var(--white); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--black); font-size: 12px; font-weight: 800; }
+        .logout-btn { padding: 7px 16px; background: var(--red); color: var(--white); border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; font-weight: 800; font-size: 13px; cursor: pointer; text-decoration: none; transition: all 0.15s; }
+        .logout-btn:hover { opacity: 0.85; }
+
+        /* Container */
+        .container { max-width: 1400px; margin: 0 auto; padding: 36px 24px 60px; position: relative; z-index: 1; }
+
+        /* Page heading */
+        .page-heading { margin-bottom: 28px; }
+        .page-heading h1 { font-size: clamp(36px, 5vw, 52px); font-weight: 800; letter-spacing: -2px; margin-bottom: 4px; }
+        .page-heading p { font-size: 14px; color: #666; font-weight: 500; }
+
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin-bottom: 36px; }
+        .stat-card {
+            border: var(--border); border-radius: 18px; padding: 22px;
+            box-shadow: var(--shadow-lg); transition: all 0.15s;
+            position: relative; overflow: hidden;
+        }
+        .stat-card:hover { transform: translate(-2px,-2px); box-shadow: 8px 8px 0 var(--black); }
+        .stat-card.c-green { background: var(--green); }
+        .stat-card.c-lime  { background: var(--lime); }
+        .stat-card.c-red   { background: #FFD0D0; }
+        .stat-card.c-yellow{ background: var(--yellow); }
+        .stat-icon { font-size: 32px; margin-bottom: 10px; }
+        .stat-value { font-size: 40px; font-weight: 800; letter-spacing: -2px; line-height: 1; margin-bottom: 4px; }
+        .stat-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(0,0,0,0.65); }
+
+        /* Section */
+        .section { background: var(--white); border: var(--border); border-radius: 20px; padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow-lg); }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 3px solid var(--black); flex-wrap: wrap; gap: 12px; }
+        .section-title { font-size: 20px; font-weight: 800; }
+
+        /* Search */
+        .search-box { padding: 9px 16px; border: var(--border); border-radius: 50px; font-size: 14px; font-weight: 600; font-family: inherit; background: #F8FFF4; box-shadow: 3px 3px 0 var(--black); outline: none; min-width: 220px; }
+        .search-box:focus { border-color: var(--green); box-shadow: 3px 3px 0 var(--green); }
+
+        /* Table */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { background: var(--black); }
+        th { padding: 12px 14px; text-align: left; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--green); }
+        td { padding: 12px 14px; border-bottom: 2px solid #F0F0F0; font-size: 13px; font-weight: 500; }
+        tbody tr:hover { background: #F9FFF4; }
+        tbody tr:nth-child(even) { background: #FAFAFA; }
+        tbody tr:nth-child(even):hover { background: #F1FFF5; }
+
+        /* Badges */
+        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border: 2px solid var(--black); border-radius: 50px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .badge.verified  { background: var(--green); color: var(--black); }
+        .badge.pending   { background: var(--orange); color: var(--white); }
+        .badge.rejected  { background: var(--red); color: var(--white); }
+        .badge.tripleyes { background: var(--lime); color: var(--black); }
+
+        /* Action btn */
+        .action-btn { padding: 6px 14px; background: var(--green); color: var(--black); border: 2px solid var(--black); border-radius: 8px; font-weight: 800; font-size: 12px; font-family: inherit; cursor: pointer; text-decoration: none; display: inline-block; box-shadow: 2px 2px 0 var(--black); transition: all 0.1s; }
+        .action-btn:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--black); }
+        .action-btn:active { transform: translate(2px,2px); box-shadow: none; }
+
+        /* Empty */
+        .empty-state { text-align: center; padding: 48px 20px; }
+        .empty-state-icon { font-size: 56px; margin-bottom: 14px; }
+        .empty-state h3 { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+        .empty-state p { font-size: 14px; color: #888; font-weight: 500; }
+
+        @media (max-width: 768px) { header { padding: 12px 16px; } .container { padding: 20px 14px 40px; } .admin-pill span { display: none; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-brand">Scholar Verify <span>Admin Panel</span></div>
+        <div class="header-right">
+            <div class="admin-pill">
+                <div class="admin-avatar">{{ request.user.first_name.0|upper|default:"A" }}</div>
+                <span>{{ request.user.username }}</span>
+            </div>
+            <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="page-heading">
+            <h1>Dashboard. 🛡️</h1>
+            <p>Student verification overview and activity log.</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card c-green">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value">{{ stats.verified_count }}</div>
+                <div class="stat-label">Verified</div>
+            </div>
+            <div class="stat-card c-yellow">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-value">{{ stats.review_count }}</div>
+                <div class="stat-label">Under Review</div>
+            </div>
+            <div class="stat-card c-red">
+                <div class="stat-icon">❌</div>
+                <div class="stat-value">{{ stats.rejected_count }}</div>
+                <div class="stat-label">Rejected</div>
+            </div>
+            <div class="stat-card c-lime">
+                <div class="stat-icon">🔒</div>
+                <div class="stat-value">{{ stats.triple_lock_count }}</div>
+                <div class="stat-label">Triple-Lock</div>
+            </div>
+        </div>
+
+        <!-- Verifications Table -->
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">📋 Recent Verifications</h2>
+                <input type="text" class="search-box" id="searchInput" placeholder="🔍 Search...">
+            </div>
+            <div class="table-wrap">
+                {% if recent_verifications %}
+                <table id="verificationsTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Enrollment</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Triple-Lock</th>
+                            <th>Joined</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in recent_verifications %}
+                        <tr>
+                            <td style="font-weight:700;">{{ user.first_name }} {{ user.last_name }}</td>
+                            <td><code style="background:#F0FFF5;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700;border:1px solid #ddd;">{{ user.enrollment_number|default:"—" }}</code></td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                {% if user.verification_status == "VERIFIED" %}<span class="badge verified">✓ Verified</span>
+                                {% elif user.verification_status == "REVIEW" %}<span class="badge pending">⏳ Review</span>
+                                {% else %}<span class="badge rejected">✗ Rejected</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if user.triple_lock %}<span class="badge tripleyes">🔒 Yes</span>
+                                {% else %}<span style="color:#ccc;font-weight:700;">—</span>{% endif %}
+                            </td>
+                            <td style="color:#888;font-size:12px;">{{ user.date_joined|date:"M d, Y" }}</td>
+                            <td><a href="/admin/accounts/user/{{ user.id }}/change/" class="action-btn">View →</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <h3>No verifications yet</h3>
+                    <p>Students will appear here after registration.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Triple Lock Section -->
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">🔐 Triple-Lock Records</h2>
+            </div>
+            <div class="table-wrap">
+                {% if triple_lock_verifications %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>OCR</th>
+                            <th>Aadhaar</th>
+                            <th>UPI</th>
+                            <th>Payment ID</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tlv in triple_lock_verifications %}
+                        <tr>
+                            <td style="font-weight:700;">{{ tlv.user.username }}</td>
+                            <td>{% if tlv.ocr_verified %}<span style="color:#008833;font-weight:800;">✓ {{ tlv.ocr_name }}</span>{% else %}<span style="color:#ccc;">—</span>{% endif %}</td>
+                            <td>{% if tlv.aadhaar_verified %}<span style="color:#008833;font-weight:800;">✓ {{ tlv.aadhaar_match_score|floatformat:0 }}%</span>{% else %}<span style="color:#ccc;">—</span>{% endif %}</td>
+                            <td>{% if tlv.upi_verified %}<span style="color:#008833;font-weight:800;">✓ {{ tlv.upi_match_score|floatformat:0 }}%</span>{% else %}<span style="color:#ccc;">—</span>{% endif %}</td>
+                            <td style="font-family:monospace;font-size:11px;color:#888;">{{ tlv.razorpay_payment_id|truncatechars:18 }}</td>
+                            <td style="color:#888;font-size:12px;">{{ tlv.created_at|date:"M d, Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔒</div>
+                    <h3>No Triple-Lock records yet</h3>
+                    <p>Records appear after additional verification steps.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const si = document.getElementById('searchInput');
+        const tbl = document.getElementById('verificationsTable');
+        if (si && tbl) {
+            si.addEventListener('input', e => {
+                const t = e.target.value.toLowerCase();
+                Array.from(tbl.querySelector('tbody').rows).forEach(r => {
+                    r.style.display = r.textContent.toLowerCase().includes(t) ? '' : 'none';
+                });
+            });
+        }
+    </script>
+</body>
+</html>

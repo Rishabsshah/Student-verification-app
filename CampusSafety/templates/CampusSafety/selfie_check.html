@@ -2,375 +2,126 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ResQ - Selfie Verification</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    
-    <!-- MediaPipe Face Mesh -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Scholarship — Selfie Verification</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-    
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --black: #111; --white: #fff;
+            --green: #00E676; --lime: #C6F135;
+            --yellow: #FFE500; --red: #FF3535;
+            --border: 3px solid var(--black);
+            --shadow: 4px 4px 0px var(--black); --shadow-lg: 6px 6px 0px var(--black);
         }
+        body { font-family: 'Space Grotesk', sans-serif; background: var(--white); color: var(--black); min-height: 100vh; }
+        body::before { content: ''; position: fixed; inset: 0; background-image: radial-gradient(circle, #111 1px, transparent 1px); background-size: 24px 24px; opacity: 0.05; pointer-events: none; z-index: 0; }
 
-        html, body {
-            height: 100%;
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-        }
+        .top-stripe { background: var(--green); border-bottom: var(--border); padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 10; }
+        .brand { font-size: 20px; font-weight: 800; letter-spacing: -1px; }
+        .step-pills { display: flex; gap: 6px; }
+        .sp { width: 32px; height: 8px; border: 2px solid var(--black); border-radius: 50px; background: rgba(0,0,0,0.15); }
+        .sp.active { background: var(--black); }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #FDF8F3;
-            color: #000;
-        }
+        .main { position: relative; z-index: 1; max-width: 520px; margin: 0 auto; padding: 24px 20px 40px; display: flex; flex-direction: column; gap: 14px; }
 
-        /* Grid Background Pattern */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(200, 200, 200, 0.15) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(200, 200, 200, 0.15) 1px, transparent 1px);
-            background-size: 20px 20px;
-            pointer-events: none;
-            z-index: 0;
-        }
+        .step-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--green); border: var(--border); border-radius: 50px; padding: 5px 14px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; box-shadow: var(--shadow); margin-bottom: 8px; }
+        h1 { font-size: clamp(28px, 6vw, 40px); font-weight: 800; letter-spacing: -1.5px; line-height: 1.05; }
 
-        .content-wrapper {
-            position: relative;
-            z-index: 1;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Main Container */
-        .main-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 40px 20px 20px;
-            overflow: hidden;
-        }
-
-        /* Hero Content */
-        .hero-content {
-            text-align: left;
-            margin-bottom: 16px;
-        }
-
-        .hero-title {
-            font-size: 44px;
-            font-weight: 900;
-            line-height: 1;
-            margin-bottom: 8px;
-            letter-spacing: -1.5px;
-        }
-
-        .step-indicator {
-            display: inline-block;
-            padding: 8px 16px;
-            background: rgba(160, 85, 255, 0.15);
-            border: 2px solid #000;
-            border-radius: 50px;
-            font-weight: 700;
-            font-size: 12px;
-            color: #A055FF;
-            box-shadow: 3px 3px 0px 0px rgba(0,0,0,1);
-            margin-bottom: 12px;
-        }
-
-        /* Instruction */
-        .instruction {
-            font-size: 20px;
-            font-weight: 800;
-            text-align: center;
-            margin-bottom: 16px;
-            color: #000;
-            min-height: 28px;
-            padding: 0 10px;
+        /* Instruction Banner */
+        .instruction-banner {
+            background: var(--lime); border: var(--border); border-radius: 50px;
+            padding: 12px 20px; box-shadow: var(--shadow);
+            font-size: 15px; font-weight: 800; text-align: center;
+            transition: all 0.3s; min-height: 48px; display: flex; align-items: center; justify-content: center;
         }
 
         /* Camera Card */
         .camera-card {
-            background: #F5F2FF;
-            border: 3px solid #000;
-            border-radius: 24px;
-            padding: 24px 20px;
-            box-shadow: 6px 6px 0px 0px rgba(0,0,0,1);
-            margin-bottom: 16px;
-            position: relative;
+            background: var(--white); border: var(--border); border-radius: 18px;
+            padding: 20px; box-shadow: var(--shadow-lg);
+            display: flex; flex-direction: column; align-items: center; gap: 16px;
         }
 
-        /* Camera Container */
         #canvas-container {
             position: relative;
-            width: 280px;
-            height: 280px;
-            margin: 0 auto;
-            border-radius: 50%;
-            overflow: hidden;
-            border: 4px solid #000;
-            box-shadow: 5px 5px 0px 0px rgba(0,0,0,1);
-            background: #000;
+            width: min(260px, 70vw); height: min(260px, 70vw);
+            border-radius: 50%; overflow: hidden;
+            border: var(--border); box-shadow: var(--shadow-lg);
+            background: var(--black);
         }
-
-        #canvas-container.active-check {
-            border-color: #A055FF;
-            box-shadow: 0 0 0 4px rgba(160, 85, 255, 0.3), 5px 5px 0px 0px rgba(0,0,0,1);
+        #canvas-container.pulsing {
             animation: pulse 1.5s ease-in-out infinite;
         }
-
         @keyframes pulse {
-            0%, 100% {
-                box-shadow: 0 0 0 4px rgba(160, 85, 255, 0.3), 5px 5px 0px 0px rgba(0,0,0,1);
-            }
-            50% {
-                box-shadow: 0 0 0 8px rgba(160, 85, 255, 0.5), 5px 5px 0px 0px rgba(0,0,0,1);
-            }
+            0%, 100% { box-shadow: 0 0 0 4px rgba(0,230,118,0.4), 4px 4px 0 var(--black); }
+            50% { box-shadow: 0 0 0 10px rgba(0,230,118,0.2), 4px 4px 0 var(--black); }
         }
+        #video_input { transform: scaleX(-1); width: 100%; height: 100%; object-fit: cover; }
+        #output_canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scaleX(-1); }
 
-        .camera-mask {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            box-shadow: inset 0 0 0 3px rgba(255,255,255,0.2);
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        #video_input {
-            transform: scaleX(-1);
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        #output_canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            transform: scaleX(-1);
-        }
-
-        /* Status Badge */
         .status-badge {
-            margin-top: 16px;
-            padding: 12px 20px;
-            background: #fff;
-            border: 2px solid #000;
-            border-radius: 50px;
-            font-size: 13px;
-            font-weight: 700;
-            text-align: center;
-            color: #666;
-            box-shadow: 3px 3px 0px 0px rgba(0,0,0,1);
+            padding: 10px 20px; border: var(--border); border-radius: 50px;
+            font-size: 13px; font-weight: 800; box-shadow: var(--shadow);
+            transition: all 0.3s; background: #F5F5F5; color: #888;
         }
+        .status-badge.ok   { background: var(--green); color: var(--black); }
+        .status-badge.err  { background: var(--red); color: var(--white); }
 
-        .status-badge.active {
-            background: #D4EDDA;
-            color: #155724;
+        /* Steps */
+        .steps-card { background: var(--lime); border: var(--border); border-radius: 14px; padding: 14px; box-shadow: var(--shadow); }
+        .steps-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
+        .steps-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .step-chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--black); color: var(--lime);
+            padding: 6px 14px; border-radius: 50px; border: 2px solid var(--black);
+            font-size: 12px; font-weight: 800; box-shadow: 2px 2px 0 var(--black);
         }
+        .step-chip.done { background: var(--white); color: var(--black); }
 
-        .status-badge.error {
-            background: #F8D7DA;
-            color: #721C24;
-        }
-
-        /* Info Card */
-        .info-card {
-            background: #fff;
-            border: 3px solid #000;
-            border-radius: 16px;
-            padding: 16px;
-            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
-        }
-
-        .info-title {
-            font-size: 14px;
-            font-weight: 800;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .info-list {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-
-        .info-list li {
-            padding: 6px 0;
-            font-size: 11px;
-            font-weight: 600;
-            color: #555;
-            display: flex;
-            align-items: flex-start;
-            gap: 6px;
-            line-height: 1.3;
-        }
-
-        .info-list li:last-child {
-            padding-bottom: 0;
-        }
-
-        .info-list li::before {
-            content: '✓';
-            color: #A055FF;
-            font-weight: 900;
-            font-size: 13px;
-            flex-shrink: 0;
-        }
-
-        /* Flash Effect */
-        @keyframes flash {
-            0% { opacity: 1; }
-            100% { opacity: 0; }
-        }
-
-        .flash-effect {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #A055FF;
-            z-index: 1000;
-            animation: flash 0.5s ease-out forwards;
-            pointer-events: none;
-        }
-
-        /* Animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .fade-in-up {
-            animation: fadeInUp 0.5s ease forwards;
-        }
-
-        @keyframes bounceIn {
-            0% {
-                transform: scale(0.95);
-                opacity: 0;
-            }
-            50% {
-                transform: scale(1.02);
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        .bounce-in {
-            animation: bounceIn 0.5s ease forwards;
-        }
-
-        /* Responsive */
-        @media (max-height: 667px) {
-            .hero-title {
-                font-size: 38px;
-                margin-bottom: 6px;
-            }
-
-            .instruction {
-                font-size: 18px;
-                margin-bottom: 12px;
-            }
-
-            #canvas-container {
-                width: 240px;
-                height: 240px;
-            }
-
-            .camera-card {
-                padding: 20px 18px;
-            }
-
-            .main-container {
-                padding: 30px 20px 20px;
-            }
-        }
-
-        @media (orientation: landscape) and (max-height: 500px) {
-            .hero-title {
-                font-size: 32px;
-            }
-
-            #canvas-container {
-                width: 200px;
-                height: 200px;
-            }
-
-            .main-container {
-                overflow-y: auto;
-            }
-        }
+        @keyframes flash { 0% { opacity: 1; } 100% { opacity: 0; } }
+        .flash-effect { position: fixed; inset: 0; background: var(--white); z-index: 1000; animation: flash 0.4s ease-out forwards; pointer-events: none; }
     </style>
 </head>
 <body>
-    <div class="content-wrapper">
-        <!-- Main Container -->
-        <div class="main-container">
-            <!-- Hero Content -->
-            <div class="hero-content fade-in-up">
-                <div class="step-indicator">📸 Step 3 of 3</div>
-                <h1 class="hero-title">ResQ</h1>
+    <div class="top-stripe">
+        <span class="brand">Scholar Verify</span>
+        <div class="step-pills">
+            <div class="sp active"></div>
+            <div class="sp active"></div>
+            <div class="sp active"></div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div>
+            <div class="step-tag">📸 Step 3 of 3</div>
+            <h1>Selfie<br>Verification.</h1>
+        </div>
+
+        <div class="instruction-banner" id="instruction">Loading Camera...</div>
+
+        <div class="camera-card">
+            <div id="canvas-container">
+                <video id="video_input" autoplay playsinline></video>
+                <canvas id="output_canvas"></canvas>
             </div>
+            <div class="status-badge" id="status-text">Initializing...</div>
+        </div>
 
-            <!-- Instruction -->
-            <div id="instruction" class="instruction">Loading Camera...</div>
-
-            <!-- Camera Card -->
-            <div class="camera-card bounce-in" style="animation-delay: 0.1s;">
-                <div id="canvas-container">
-                    <video id="video_input" autoplay playsinline></video>
-                    <canvas id="output_canvas"></canvas>
-                    <div class="camera-mask"></div>
-                </div>
-
-                <div class="status-badge" id="status-text">Initializing Face Mesh...</div>
-            </div>
-
-            <!-- Info Card -->
-            <div class="info-card fade-in-up" style="animation-delay: 0.2s;">
-                <h3 class="info-title">📋 Liveness Check</h3>
-                <ul class="info-list">
-                    <li>Position face in circle</li>
-                    <li>Turn slightly left</li>
-                    <li>Blink your eyes</li>
-                </ul>
+        <div class="steps-card">
+            <div class="steps-title">📋 Liveness Steps</div>
+            <div class="steps-row">
+                <div class="step-chip" id="chip-0">👁️ Center Face</div>
+                <div class="step-chip" id="chip-1">⬅️ Turn Left</div>
+                <div class="step-chip" id="chip-2">😑 Blink</div>
             </div>
         </div>
     </div>
@@ -383,218 +134,96 @@
         const statusEl = document.getElementById('status-text');
         const container = document.getElementById('canvas-container');
 
-        let isFaceDetected = false;
-        let livenessStep = 0; // 0: Center, 1: Turn Left, 2: Blink
-        let captured = false;
-        
-        // Configuration
-        const STEPS = [
-            { id: 0, text: "Position face in circle", check: checkCenter },
-            { id: 1, text: "Turn slightly LEFT ⬅️", check: checkTurnLeft },
-            { id: 2, text: "Blink your eyes 👁️", check: checkBlink }
-        ];
+        let livenessStep = 0, captured = false, blinkDetected = false;
 
-        // State variables
-        let lastBlink = Date.now();
-        let blinkDetected = false;
+        const STEPS = [
+            { id: 0, text: "👁️ Center your face in the circle", check: checkCenter },
+            { id: 1, text: "⬅️ Now turn slightly LEFT", check: checkTurnLeft },
+            { id: 2, text: "😑 Blink your eyes slowly", check: checkBlink }
+        ];
 
         function onResults(results) {
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
             canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-            
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-                isFaceDetected = true;
-                const landmarks = results.multiFaceLandmarks[0];
-                
-                // Check Liveness State
-                if (!captured) processLiveness(landmarks);
-
+                if (!captured) processLiveness(results.multiFaceLandmarks[0]);
             } else {
-                isFaceDetected = false;
-                instructionEl.innerText = "Face not found";
-                container.classList.remove('active-check');
-                statusEl.classList.remove('active', 'error');
+                instructionEl.innerText = "❓ Face not visible";
+                container.classList.remove('pulsing');
+                statusEl.className = 'status-badge err'; statusEl.innerText = "No face found";
             }
             canvasCtx.restore();
         }
 
-        // --- Logic ---
-
         function processLiveness(landmarks) {
-            const currentStep = STEPS[livenessStep];
-            instructionEl.innerText = currentStep.text;
-            container.classList.add('active-check');
-            statusEl.classList.add('active');
-
-            if (currentStep.check(landmarks)) {
-                // Haptic feedback
-                if ('vibrate' in navigator) {
-                    navigator.vibrate(50);
-                }
-                
-                // Advance Step
+            const s = STEPS[livenessStep];
+            instructionEl.innerText = s.text;
+            container.classList.add('pulsing');
+            statusEl.className = 'status-badge ok';
+            if (s.check(landmarks)) {
+                document.getElementById('chip-'+livenessStep).classList.add('done');
+                if ('vibrate' in navigator) navigator.vibrate(50);
                 livenessStep++;
-                if (livenessStep >= STEPS.length) {
-                    captureSelfie();
-                } else {
-                    // Feedback for next step
-                    instructionEl.style.color = "#00cc66";
-                    setTimeout(() => instructionEl.style.color = "#000", 300);
-                }
+                if (livenessStep >= STEPS.length) captureSelfie();
+                else { instructionEl.style.background='#00E676'; setTimeout(()=>instructionEl.style.background='#C6F135',500); }
             }
         }
 
-        function checkCenter(landmarks) {
-            const nose = landmarks[1]; 
-            const centered = (nose.x > 0.4 && nose.x < 0.6 && nose.y > 0.4 && nose.y < 0.7);
-            
-            statusEl.innerText = centered ? "✓ Face Centered" : "Move to Center";
-            return centered;
-        }
-
-        function checkTurnLeft(landmarks) {
-            const nose = landmarks[1].x;
-            const turned = (nose > 0.6);
-            
-            statusEl.innerText = turned ? "✓ Good Turn!" : "Turn Left...";
-            return turned;
-        }
-
-        function checkBlink(landmarks) {
-            const leftEyeTop = landmarks[159].y;
-            const leftEyeBottom = landmarks[145].y;
-            const rightEyeTop = landmarks[386].y;
-            const rightEyeBottom = landmarks[374].y;
-
-            const leftOpen = Math.abs(leftEyeTop - leftEyeBottom);
-            const rightOpen = Math.abs(rightEyeTop - rightEyeBottom);
-
-            const isClosed = (leftOpen < 0.015 && rightOpen < 0.015);
-            
-            if (isClosed) {
-                blinkDetected = true;
-                statusEl.innerText = "Eyes Closed...";
-            } else if (blinkDetected && !isClosed) {
-                // User blinked (Closed then Open)
-                blinkDetected = false;
-                statusEl.innerText = "✓ Blink Detected!";
-                return true; 
-            }
+        function checkCenter(lm) { const n=lm[1]; return n.x>0.4&&n.x<0.6&&n.y>0.4&&n.y<0.7; }
+        function checkTurnLeft(lm) { return lm[1].x > 0.6; }
+        function checkBlink(lm) {
+            const lo = Math.abs(lm[159].y - lm[145].y), ro = Math.abs(lm[386].y - lm[374].y);
+            if (lo < 0.015 && ro < 0.015) { blinkDetected = true; }
+            else if (blinkDetected) { blinkDetected = false; return true; }
             return false;
         }
 
         function captureSelfie() {
             captured = true;
-            instructionEl.innerText = "Verifying...";
-            container.classList.remove('active-check');
-            statusEl.classList.remove('active');
-            statusEl.innerText = "Processing...";
-            
-            // Visual Flash
-            const flash = document.createElement('div');
-            flash.className = 'flash-effect';
-            document.body.appendChild(flash);
-
-            // Haptic feedback
-            if ('vibrate' in navigator) {
-                navigator.vibrate([100, 50, 100]);
-            }
-
-            // Convert canvas to blob and upload
+            instructionEl.innerText = "⏳ Verifying...";
+            container.classList.remove('pulsing');
+            statusEl.className = 'status-badge'; statusEl.innerText = "Processing...";
+            const flash = document.createElement('div'); flash.className = 'flash-effect'; document.body.appendChild(flash);
+            if ('vibrate' in navigator) navigator.vibrate([100,50,100]);
             canvasElement.toBlob(uploadFrame, 'image/jpeg', 0.95);
         }
 
         async function uploadFrame(blob) {
-            const formData = new FormData();
-            formData.append('selfie_image', blob, 'liveness_check.jpg');
-            formData.append('id_card_token', "{{ token }}"); 
-
+            const fd = new FormData();
+            fd.append('selfie_image', blob, 'liveness.jpg');
+            fd.append('id_card_token', "{{ token }}");
             try {
-                const res = await fetch('/api/verification/verify-selfie/', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {'X-CSRFToken': '{{ csrf_token }}'}
-                });
+                const res = await fetch('/api/verification/verify-selfie/', { method:'POST', body:fd, headers:{'X-CSRFToken':'{{ csrf_token }}'} });
                 const data = await res.json();
-
                 if (data.success) {
                     instructionEl.innerText = "✅ Verified!";
-                    statusEl.innerText = "Redirecting...";
-                    statusEl.classList.add('active');
-                    
-                    // Success haptic
-                    if ('vibrate' in navigator) {
-                        navigator.vibrate([100, 50, 100, 50, 100]);
-                    }
-                    
-                    setTimeout(() => {
-                        window.location.href = "{% url 'triple_lock_page' %}";
-                    }, 1500);
+                    statusEl.className = 'status-badge ok'; statusEl.innerText = "Redirecting...";
+                    if ('vibrate' in navigator) navigator.vibrate([100,50,100,50,100]);
+                    setTimeout(() => window.location.href = "{% url 'triple_lock_page' %}", 1500);
                 } else {
                     instructionEl.innerText = "❌ Match Failed";
-                    statusEl.innerText = data.message;
-                    statusEl.classList.add('error');
-                    
-                    // Error haptic
-                    if ('vibrate' in navigator) {
-                        navigator.vibrate([200, 100, 200]);
-                    }
-                    
-                    if (data.message.includes("Session expired") || data.message.includes("Invalid token")) {
-                         statusEl.innerText += " - Restarting...";
-                         setTimeout(() => window.location.href = "{% url 'id_verification_page' %}", 2000);
-                    } else {
-                         statusEl.innerText += " - Reloading...";
-                         setTimeout(() => window.location.reload(), 3000);
-                    }
+                    statusEl.className = 'status-badge err'; statusEl.innerText = data.message || "Verification failed";
+                    if ('vibrate' in navigator) navigator.vibrate([200,100,200]);
+                    setTimeout(() => window.location.reload(), 3000);
                 }
-            } catch (err) {
-                instructionEl.innerText = "Error";
-                statusEl.innerText = "Connection failed";
-                statusEl.classList.add('error');
-                console.error(err);
+            } catch(e) {
+                instructionEl.innerText = "Connection Error";
+                statusEl.className = 'status-badge err'; statusEl.innerText = "Please try again";
             }
         }
 
-        // --- Init MediaPipe ---
-        const faceMesh = new FaceMesh({locateFile: (file) => {
-            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
-        }});
-        
-        faceMesh.setOptions({
-            maxNumFaces: 1,
-            refineLandmarks: true,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
-        });
-        
+        const faceMesh = new FaceMesh({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}` });
+        faceMesh.setOptions({ maxNumFaces:1, refineLandmarks:true, minDetectionConfidence:0.5, minTrackingConfidence:0.5 });
         faceMesh.onResults(onResults);
 
         const camera = new Camera(videoElement, {
-            onFrame: async () => {
-                await faceMesh.send({image: videoElement});
-            },
-            width: 640,
-            height: 480
+            onFrame: async () => await faceMesh.send({ image: videoElement }),
+            width: 640, height: 480
         });
-        
-        camera.start().then(() => {
-             statusEl.innerText = "Camera Active - Start!";
-             statusEl.classList.add('active');
-             instructionEl.innerText = "Position face in circle";
-        }).catch(err => {
-             instructionEl.innerText = "Camera Error";
-             statusEl.innerText = "Please allow camera access";
-             statusEl.classList.add('error');
-             console.error(err);
-        });
-
-        // Prevent scroll bounce
-        document.body.addEventListener('touchmove', function(e) {
-            e.preventDefault();
-        }, { passive: false });
-
+        camera.start()
+            .then(() => { statusEl.className='status-badge ok'; statusEl.innerText='🟢 Camera Active!'; instructionEl.innerText='👁️ Center your face in the circle'; })
+            .catch(() => { instructionEl.innerText='Camera Error'; statusEl.className='status-badge err'; statusEl.innerText='Allow camera access'; });
     </script>
 </body>
 </html>

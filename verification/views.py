@@ -83,7 +83,7 @@ def verify_student(request):
 def inspect_id_card(request):
     """
     Public API to inspect an ID card before signup.
-    Returns temporary 'token' (file path) for the next step (Selfie).
+    OCR verifies the student ID, no selfie/face check needed.
     """
     if 'id_image' not in request.FILES:
         return Response({'error': 'No image file provided'}, status=400)
@@ -95,43 +95,110 @@ def inspect_id_card(request):
         file_name = default_storage.save('temp/' + image_file.name, ContentFile(image_file.read()))
         file_path = default_storage.path(file_name)
         
-        # OCR (extracts name now too)
+        # OCR (extracts name, college, enrollment)
         name, college, enrollment, msg = verify_student_id(file_path)
         
-        # --- InsightFace Integration ---
-        from .face_embedding import FaceAnalysisModel
-        embedding, face_msg = FaceAnalysisModel.get_embedding(file_path)
-        
-        # Don't fail immediately on face error for ID card (OCR is primary), but warn?
-        # Actually, for 1:1 match we NEED the ID face.
-        if embedding is None:
-             default_storage.delete(file_name)
-             return Response({
-                'valid': False, 
-                'message': f'No face detected on ID Card. Please upload a clearer photo. ({face_msg})'
-             }, status=200)
-             
-        # Save embedding to session (convert numpy to list for JSON serialization)
-        request.session['id_face_embedding'] = embedding.tolist()
-        
-        # FIX: Explicitly set the token in SESSION right now. 
-        # This prevents it from being lost if the frontend round-trip fails.
-        request.session['id_card_token'] = 'insightface_session'
-        request.session.modified = True
-        
         default_storage.delete(file_name)
-        
-        # Validation Logic
+
+        # ══════════════════════════════════════════════════════════════════════
+        # 🤖 GEMINI VISION — FAKE vs REAL ID CARD CHECK
+        # Runs immediately after OCR. Uses AI vision to verify the image is
+        # a genuine printed institutional ID card, not a handwritten fake.
+        # Skips gracefully if GEMINI_API_KEY is missing or API is unavailable.
+        # ══════════════════════════════════════════════════════════════════════
+        try:
+            import io as _io, json as _json, warnings as _warnings
+            import google.generativeai as _genai
+            from PIL import Image as _PILImage
+            from django.conf import settings as _settings
+
+            _gemini_key = getattr(_settings, 'GEMINI_API_KEY', None)
+
+            if _gemini_key:
+                # Suppress the deprecation warning from old SDK
+                _warnings.filterwarnings('ignore', category=FutureWarning)
+
+                _genai.configure(api_key=_gemini_key)
+                _gmodel = _genai.GenerativeModel('gemini-3-flash-preview')
+
+                # Read image bytes directly from request (no extra disk save needed)
+                _img_file = request.FILES.get('id_image')
+                if _img_file:
+                    _img_file.seek(0)   # rewind — OCR already read it once
+                    _pil_img = _PILImage.open(_io.BytesIO(_img_file.read()))
+
+                    _prompt = (
+                        "You are a strict document-authentication AI. "
+                        "Look at this image and decide if it is a REAL, printed institutional student ID card "
+                        "OR a FAKE (handwritten, typed on plain paper, digitally fabricated, etc.).\n\n"
+                        "Respond ONLY with valid JSON (no markdown, no explanation):\n"
+                        "{\n"
+                        '  "is_real_id_card": true or false,\n'
+                        '  "confidence": <integer 0-100>,\n'
+                        '  "text_type": "printed" or "handwritten" or "digital_fake",\n'
+                        '  "has_student_photo": true or false,\n'
+                        '  "has_official_logo_or_branding": true or false,\n'
+                        '  "reason": "<one sentence explaining your decision>"\n'
+                        "}\n\n"
+                        "Mark is_real_id_card = false if:\n"
+                        "- Text is handwritten on plain paper\n"
+                        "- No photo of a student is present\n"
+                        "- No college logo, seal, or official branding is visible\n"
+                        "- It looks like a plain typed/printed document, not an ID card\n"
+                        "- The card design does not match an institutional ID format"
+                    )
+
+                    _resp = _gmodel.generate_content([_prompt, _pil_img])
+                    _raw  = _resp.text.strip()
+
+                    # Strip ```json ... ``` fences if Gemini wraps the response
+                    if _raw.startswith('```'):
+                        _raw = '\n'.join(_raw.split('\n')[1:])
+                        _raw = _raw.rstrip('`').strip()
+
+                    _result     = _json.loads(_raw)
+                    _is_real    = _result.get('is_real_id_card', True)
+                    _confidence = int(_result.get('confidence', 100))
+                    _text_type  = _result.get('text_type', 'printed')
+                    _reason     = _result.get('reason', '')
+
+                    print(f"[Gemini] ✅ real={_is_real}  confidence={_confidence}  "
+                          f"type={_text_type}  reason={_reason}")
+
+                    # ── Rejection rules ────────────────────────────────────────
+                    if _text_type == 'handwritten':
+                        return Response({
+                            'valid': False,
+                            'message': f'✏️ Handwritten ID detected. Please upload your actual '
+                                       f'printed college ID card. ({_reason})',
+                        }, status=200)
+
+                    if not _is_real or _confidence < 55:
+                        return Response({
+                            'valid': False,
+                            'message': f'❌ This does not appear to be a real ID card. {_reason} '
+                                       f'Please upload a clear photo of your genuine printed college ID.',
+                            'gemini_confidence': _confidence,
+                        }, status=200)
+            else:
+                print("[Gemini] ⏭️ Skipped — GEMINI_API_KEY not set in .env")
+
+        except Exception as _gemini_err:
+            # Non-fatal: if Gemini is unavailable, fall through to OCR validation.
+            print(f"[Gemini] ⚠️ Check skipped (will use OCR result): {_gemini_err}")
+        # ══════════════════════════════════════════════════════════════════════
+
+
         if college is None:
             return Response({
                 'valid': False, 
-                'message': f'College not recognized. (Debug: {msg})'
+                'message': f'College not recognized. Please upload a clearer ID photo.'
             }, status=200)
         
         if enrollment is None:
              return Response({
                 'valid': False, 
-                'message': f'Enrollment not detected. (Debug: {msg})'
+                'message': f'Enrollment number not detected. Please upload a clearer ID photo.'
              }, status=200)
 
         student_name = name if name else "UNKNOWN"
@@ -139,11 +206,11 @@ def inspect_id_card(request):
 
         # Check duplicate using HASH
         if User.objects.filter(identity_hash=identity_hash).exists():
-             return Response({'valid': False, 'message': 'Identity already registered'}, status=200)
+             return Response({'valid': False, 'message': 'This student ID is already registered.'}, status=200)
              
-        # Also check enrollment for safety (legacy check)
+        # Also check enrollment for safety
         if User.objects.filter(enrollment_number=enrollment).exists():
-             return Response({'valid': False, 'message': 'Enrollment number already registered'}, status=200)
+             return Response({'valid': False, 'message': 'Enrollment number already registered.'}, status=200)
              
         # Initialize Triple-Lock session state
         import uuid
@@ -168,9 +235,9 @@ def inspect_id_card(request):
             'college': college, 
             'enrollment': enrollment,
             'identity_hash': identity_hash,
-            'id_card_token': 'insightface_session', 
+            'id_card_token': 'ocr_verified', 
             'session_token': session_token,
-            'message': 'ID Verified. Please proceed to selfie verification.'
+            'message': 'ID Verified. Proceed to account details.'
         })
         
     except Exception as e:
@@ -383,37 +450,101 @@ def account_details_page(request):
     token = request.GET.get('token')
     
     if request.method == 'POST':
+        submitted_email = request.POST.get('email', '').strip().lower()
+        submitted_phone = request.POST.get('phone', '').strip()
+
+        # ── EARLY DUPLICATE CHECKS ─────────────────────────────────────────────
+        # Check email, phone, AND full name before sending the user through
+        # 3 more costly verification steps only to reject them at the end.
+        from accounts.models import User as UserModel
+        from verification.models import TripleLockVerification
+
+        # Pull OCR name from session NOW so we can check it too
+        triple_lock_state_post = request.session.get('triple_lock_state', {})
+        ocr_full_name = (triple_lock_state_post.get('ocr_data', {}).get('name') or '').strip()
+
+        def _render_error(error_msg):
+            enrollment_e = request.POST.get('enrollment') or request.GET.get('enrollment', '')
+            token_e      = request.POST.get('token')      or request.GET.get('token', '')
+            return render(request, 'CampusSafety/account_details.html', {
+                'enrollment':    enrollment_e if enrollment_e else 'Pending...',
+                'token':         token_e,
+                'student_name':  ocr_full_name,
+                'error':         error_msg,
+                'prefill_phone': submitted_phone,
+                'prefill_email': submitted_email,
+            })
+
+        # 1️⃣  Email check
+        if UserModel.objects.filter(email__iexact=submitted_email).exists() or \
+           UserModel.objects.filter(username__iexact=submitted_email).exists():
+            return _render_error(
+                f'An account with the email "{submitted_email}" is already registered. '
+                f'Please log in instead.'
+            )
+
+        # 2️⃣  Phone number check
+        if submitted_phone and UserModel.objects.filter(phone_number=submitted_phone).exists():
+            return _render_error(
+                f'The phone number {submitted_phone} is already linked to an existing account. '
+                f'Please log in or use a different number.'
+            )
+
+        # 3️⃣  Full name check (case-insensitive, across User AND TripleLockVerification)
+        if ocr_full_name:
+            name_parts = ocr_full_name.split(' ', 1)
+            fn = name_parts[0]
+            ln = name_parts[1] if len(name_parts) > 1 else ''
+
+            name_in_user = UserModel.objects.filter(
+                first_name__iexact=fn, last_name__iexact=ln
+            ).exists()
+            name_in_tlv = TripleLockVerification.objects.filter(
+                ocr_name__iexact=ocr_full_name
+            ).exists()
+
+            if name_in_user or name_in_tlv:
+                return _render_error(
+                    f'A student named "{ocr_full_name}" is already registered. '
+                    f'If this is you, please log in instead.'
+                )
+        # ── END DUPLICATE CHECKS ───────────────────────────────────────────────
+
         # Save to session and go to next step
-        request.session['signup_full_name'] = request.POST.get('full_name')
-        request.session['signup_phone'] = request.POST.get('phone')
-        request.session['signup_email'] = request.POST.get('email')
-        
+        # Full name (already in ocr_full_name) comes from OCR, not from user input.
+        request.session['signup_full_name'] = ocr_full_name  # Store OCR name (used by ResQ API)
+        request.session['signup_phone'] = submitted_phone
+        request.session['signup_email'] = submitted_email
+
         # Get from Hidden Fields (More reliable than GET during POST)
         token = request.POST.get('token')
         enrollment = request.POST.get('enrollment')
         identity_hash = request.POST.get('identity_hash')
 
         if enrollment: request.session['enrollment'] = enrollment
-        
+
         # FIX: The frontend might pass string "undefined" which corrupts our session
-        if token and token != 'undefined': 
+        if token and token != 'undefined':
             request.session['id_card_token'] = token
         elif 'id_face_embedding' in request.session:
             # Fallback: If we have the embedding, we are valid. Restore dummy token.
             token = 'insightface_session'
             request.session['id_card_token'] = token
-            
+
         if identity_hash: request.session['identity_hash'] = identity_hash
 
         # Persist Triple-Lock Session Token
         triple_lock_token = request.POST.get('session_token')
         if triple_lock_token:
-            # We already initialized triple_lock_state in inspect_id_card, 
-            # just ensuring the token stays in session if the frontend passes it back.
             if 'triple_lock_state' not in request.session:
                 request.session['triple_lock_state'] = {'session_token': triple_lock_token}
-        
-        return redirect('selfie_check_page')
+
+        # Set verification as passed (no selfie step)
+        request.session['verification_status'] = 'VERIFIED'
+        request.session.modified = True
+
+        return redirect('triple_lock_page')
+
 
     if not enrollment:
         # Fallback or error if enrollment is missing (e.g. direct access)
@@ -507,9 +638,19 @@ def signup_final_page(request):
                 messages.error(request, f'An account with this email already exists. Please login instead.')
                 return redirect('login')
             
+            # Extract name from OCR data (authoritative source)
+            ocr_name = triple_lock_state.get('ocr_data', {}).get('name') or \
+                       request.session.get('signup_full_name', '')
+            ocr_name = ocr_name.strip() if ocr_name else ''
+            name_parts = ocr_name.split(' ', 1)
+            ocr_first_name = name_parts[0] if name_parts else ''
+            ocr_last_name  = name_parts[1] if len(name_parts) > 1 else ''
+
             user = User(
                 username=email,  # Use email as username
                 email=email,
+                first_name=ocr_first_name,   # ← OCR name saved here
+                last_name=ocr_last_name,     # ← rest of OCR name saved here
                 phone_number=request.session.get('signup_phone'),
                 enrollment_number=request.session.get('enrollment'),
                 identity_hash=request.session.get('identity_hash'),
@@ -563,9 +704,11 @@ def signup_final_page(request):
             import requests
             try:
                 external_url = "https://resq-server.onrender.com/api/auth/signup/"
+                # Use OCR name from triple_lock_state as the authoritative name source
+                ocr_name = triple_lock_state.get('ocr_data', {}).get('name') or request.session.get('signup_full_name', 'Student')
                 payload = {
                     "email": email,
-                    "full_name": request.session.get('signup_full_name', 'Student'),
+                    "full_name": ocr_name,
                     "phone_number": request.session.get('signup_phone'),
                     "role": "STUDENT",
                     "password": form.cleaned_data['password1'],

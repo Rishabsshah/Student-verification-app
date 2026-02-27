@@ -2,535 +2,155 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ResQ - Account Details</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Scholarship — Account Details</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --black: #111; --white: #fff;
+            --green: #00E676; --lime: #C6F135;
+            --yellow: #FFE500; --red: #FF3535;
+            --border: 3px solid var(--black);
+            --shadow: 4px 4px 0px var(--black); --shadow-lg: 6px 6px 0px var(--black);
         }
+        body { font-family: 'Space Grotesk', sans-serif; background: var(--white); color: var(--black); min-height: 100vh; }
+        body::before { content: ''; position: fixed; inset: 0; background-image: radial-gradient(circle, #111 1px, transparent 1px); background-size: 24px 24px; opacity: 0.05; pointer-events: none; z-index: 0; }
 
-        html, body {
-            height: 100%;
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-        }
+        .top-stripe { background: var(--green); border-bottom: var(--border); padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 10; }
+        .brand { font-size: 20px; font-weight: 800; letter-spacing: -1px; }
+        .step-pills { display: flex; gap: 6px; }
+        .sp { width: 32px; height: 8px; border: 2px solid var(--black); border-radius: 50px; background: rgba(0,0,0,0.15); }
+        .sp.active { background: var(--black); }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #FDF8F3;
-            color: #000;
-        }
+        .main { position: relative; z-index: 1; max-width: 520px; margin: 0 auto; padding: 24px 20px 40px; display: flex; flex-direction: column; gap: 16px; }
 
-        /* Grid Background Pattern */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(200, 200, 200, 0.15) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(200, 200, 200, 0.15) 1px, transparent 1px);
-            background-size: 20px 20px;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .content-wrapper {
-            position: relative;
-            z-index: 1;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Main Container */
-        .main-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 40px 20px 20px;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        /* Hero Content */
-        .hero-content {
-            text-align: left;
-            margin-bottom: 16px;
-        }
-
-        .hero-title {
-            font-size: 44px;
-            font-weight: 900;
-            line-height: 1;
-            margin-bottom: 12px;
-            letter-spacing: -1.5px;
-        }
-
-        .hero-subtitle {
-            font-size: 15px;
-            line-height: 1.5;
-            color: #333;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        .step-indicator {
-            display: inline-block;
-            padding: 8px 16px;
-            background: rgba(160, 85, 255, 0.15);
-            border: 2px solid #000;
-            border-radius: 50px;
-            font-weight: 700;
-            font-size: 12px;
-            color: #A055FF;
-            box-shadow: 3px 3px 0px 0px rgba(0,0,0,1);
-            margin-bottom: 12px;
-        }
+        .step-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--green); border: var(--border); border-radius: 50px; padding: 5px 14px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; box-shadow: var(--shadow); margin-bottom: 10px; }
+        h1 { font-size: clamp(28px, 6vw, 40px); font-weight: 800; letter-spacing: -1.5px; line-height: 1.05; margin-bottom: 6px; }
+        .subtitle { font-size: 14px; font-weight: 500; color: #555; }
 
         /* Status Box */
-        .status-box {
-            background: #D4EDDA;
-            border: 3px solid #000;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 16px;
-            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .status-icon {
-            font-size: 24px;
-            flex-shrink: 0;
-        }
-
-        .status-text {
-            font-size: 14px;
-            font-weight: 700;
-            color: #155724;
-            line-height: 1.4;
-        }
-
-        .status-text b {
-            color: #000;
-        }
+        .status-box { background: var(--lime); border: var(--border); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; }
+        .status-icon { font-size: 22px; flex-shrink: 0; }
+        .status-text { font-size: 13px; font-weight: 700; line-height: 1.4; }
 
         /* Form Card */
-        .form-card {
-            background: #F5F2FF;
-            border: 3px solid #000;
-            border-radius: 24px;
-            padding: 24px 20px;
-            box-shadow: 6px 6px 0px 0px rgba(0,0,0,1);
-            margin-bottom: 16px;
+        .card { background: var(--white); border: var(--border); border-radius: 18px; padding: 22px; box-shadow: var(--shadow-lg); }
+        .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 2px dashed #ddd; }
+        .card-icon { width: 46px; height: 46px; flex-shrink: 0; background: var(--green); border: var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow); font-size: 22px; }
+        .card-title { font-size: 17px; font-weight: 800; }
+        .card-sub { font-size: 12px; color: #777; font-weight: 600; }
+
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+        input[type="text"], input[type="email"], input[type="tel"] {
+            width: 100%; padding: 13px 16px; border: var(--border); border-radius: 10px;
+            font-size: 15px; font-weight: 600; font-family: inherit;
+            background: #F8FFF4; box-shadow: 3px 3px 0px var(--black);
+            outline: none; transition: all 0.15s;
         }
+        input:focus { background: var(--white); box-shadow: 3px 3px 0px var(--green); border-color: var(--green); }
+        input:valid:not(:placeholder-shown) { border-color: var(--green); }
+        input:invalid:not(:placeholder-shown) { border-color: var(--red); }
+        .hint { font-size: 11px; color: #888; margin-top: 5px; font-weight: 600; }
 
-        .form-header {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 20px;
+        .submit-btn {
+            width: 100%; padding: 15px; background: var(--green); color: var(--black);
+            border: var(--border); border-radius: 12px; font-size: 15px; font-weight: 800;
+            font-family: inherit; cursor: pointer; box-shadow: var(--shadow-lg);
+            transition: all 0.12s; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 8px;
         }
+        .submit-btn:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 var(--black); }
+        .submit-btn:active { transform: translate(3px,3px); box-shadow: 1px 1px 0 var(--black); }
 
-        .form-icon {
-            width: 56px;
-            height: 56px;
-            background: #A055FF;
-            border: 3px solid #000;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
-            flex-shrink: 0;
-            font-size: 28px;
-        }
-
-        .form-title-group h2 {
-            font-size: 22px;
-            font-weight: 800;
-            margin-bottom: 4px;
-            line-height: 1.2;
-        }
-
-        .form-subtitle {
-            font-size: 13px;
-            color: #666;
-            font-weight: 600;
-        }
-
-        /* Form Fields */
-        .form-group {
-            margin-bottom: 18px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 14px;
-            font-weight: 800;
-            margin-bottom: 8px;
-            color: #000;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 16px;
-            background: #fff;
-            border: 3px solid #000;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.2s ease;
-            box-shadow: 3px 3px 0px 0px rgba(0,0,0,1);
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #A055FF;
-            transform: translate(1px, 1px);
-            box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
-        }
-
-        .form-input::placeholder {
-            color: #999;
-            font-weight: 500;
-        }
-
-        .input-hint {
-            font-size: 11px;
-            color: #666;
-            margin-top: 6px;
-            font-weight: 600;
-        }
-
-        /* Submit Button */
-        .submit-button {
-            width: 100%;
-            padding: 18px;
-            background: #A055FF;
-            color: #fff;
-            border: 3px solid #000;
-            border-radius: 16px;
-            font-size: 17px;
-            font-weight: 900;
-            cursor: pointer;
-            box-shadow: 5px 5px 0px 0px rgba(0,0,0,1);
-            transition: all 0.15s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
-            margin-top: 24px;
-        }
-
-        .submit-button:active {
-            transform: translate(3px, 3px);
-            box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
-        }
-
-        /* Info Card */
-        .info-card {
-            background: #fff;
-            border: 3px solid #000;
-            border-radius: 16px;
-            padding: 16px;
-            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
-        }
-
-        .info-title {
-            font-size: 14px;
-            font-weight: 800;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .info-text {
-            font-size: 12px;
-            color: #555;
-            font-weight: 600;
-            line-height: 1.4;
-        }
-
-        /* Animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .fade-in-up {
-            animation: fadeInUp 0.5s ease forwards;
-        }
-
-        @keyframes bounceIn {
-            0% {
-                transform: scale(0.95);
-                opacity: 0;
-            }
-            50% {
-                transform: scale(1.02);
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        .bounce-in {
-            animation: bounceIn 0.5s ease forwards;
-        }
-
-        /* Tablet and larger screens */
-        @media (min-width: 768px) {
-            .main-container {
-                max-width: 480px;
-                margin: 0 auto;
-            }
-
-            .hero-title {
-                font-size: 56px;
-            }
-        }
-
-        /* Very small phones */
-        @media (max-height: 667px) {
-            .hero-title {
-                font-size: 38px;
-                margin-bottom: 8px;
-            }
-
-            .main-container {
-                padding: 30px 20px 20px;
-            }
-
-            .form-card {
-                padding: 20px 18px;
-            }
-
-            .form-group {
-                margin-bottom: 14px;
-            }
-        }
-
-        /* Landscape mode */
-        @media (orientation: landscape) and (max-height: 500px) {
-            .hero-title {
-                font-size: 32px;
-            }
-
-            .main-container {
-                padding: 20px;
-                overflow-y: scroll;
-            }
-
-            .form-card {
-                padding: 16px;
-            }
-        }
-
-        /* Validation styles */
-        .form-input:invalid:not(:placeholder-shown) {
-            border-color: #ff4444;
-        }
-
-        .form-input:valid:not(:placeholder-shown) {
-            border-color: #00cc66;
-        }
+        .info-card { background: var(--lime); border: var(--border); border-radius: 14px; padding: 14px; box-shadow: var(--shadow); }
+        .info-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+        .info-text { font-size: 12px; color: #333; font-weight: 600; line-height: 1.5; }
     </style>
 </head>
 <body>
-    <div class="content-wrapper">
-        <!-- Main Container -->
-        <div class="main-container">
-            <!-- Hero Content -->
-            <div class="hero-content fade-in-up">
-                <div class="step-indicator">📋 Step 2 of 3</div>
-                <h1 class="hero-title">ResQ</h1>
-                <p class="hero-subtitle">
-                    Complete your account details
-                </p>
-            </div>
+    <div class="top-stripe">
+        <span class="brand">Scholar Verify</span>
+        <div class="step-pills">
+            <div class="sp active"></div>
+            <div class="sp active"></div>
+        </div>
+    </div>
 
-            <!-- Status Box -->
-            <div class="status-box fade-in-up" style="animation-delay: 0.1s;">
-                <span class="status-icon">✅</span>
-                <div class="status-text">
-                    {% if student_name %}
-                        ID Verified: <b>{{ student_name }}</b><br>
-                        <small style="font-size: 12px; opacity: 0.8;">Enrollment: {{ enrollment }}</small>
-                    {% else %}
-                        ID Verified: <b>{{ enrollment }}</b>
-                    {% endif %}
+    <div class="main">
+        <div>
+            <div class="step-tag">👤 Step 2 of 2</div>
+            <h1>Account<br>Details.</h1>
+            <p class="subtitle">Fill in your information to continue.</p>
+        </div>
+
+        <div class="status-box">
+            <span class="status-icon">✅</span>
+            <div class="status-text">
+                {% if student_name %}<strong>{{ student_name }}</strong> — Enrollment: {{ enrollment }}
+                {% else %}<strong>ID Verified:</strong> {{ enrollment }}{% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">📝</div>
+                <div>
+                    <div class="card-title">Your Details</div>
+                    <div class="card-sub">All fields are required</div>
                 </div>
             </div>
 
-            <!-- Form Card -->
-            <div class="form-card bounce-in" style="animation-delay: 0.2s;">
-                <div class="form-header">
-                    <div class="form-icon">👤</div>
-                    <div class="form-title-group">
-                        <h2>Account Details</h2>
-                        <p class="form-subtitle">Enter your information</p>
-                    </div>
+            <form method="post" onsubmit="return validateForm()">
+                {% csrf_token %}
+                <input type="hidden" name="token" value="{{ token }}">
+                <input type="hidden" name="enrollment" value="{{ enrollment }}">
+                <input type="hidden" name="identity_hash" value="{{ request.GET.hash }}">
+                <input type="hidden" name="session_token" value="{{ request.GET.session_token }}">
+
+                {% if error %}
+                <div style="background:#FFE5E5; border:3px solid #111; border-radius:12px; padding:14px 16px; margin-bottom:18px; box-shadow:4px 4px 0px #111; display:flex; flex-direction:column; gap:10px;">
+                    <div style="font-size:13px; font-weight:800; color:#C62828;">⛔ {{ error }}</div>
+                    <a href="{% url 'login' %}" style="display:inline-flex; align-items:center; gap:6px; background:#111; color:#C6F135; border:2px solid #111; border-radius:8px; padding:8px 16px; font-size:12px; font-weight:800; text-decoration:none; box-shadow:3px 3px 0 #555; width:fit-content;">🔑 Go to Login →</a>
                 </div>
+                {% endif %}
 
-                <form method="post" onsubmit="return validateForm()">
-                    {% csrf_token %}
-                    <!-- Hidden fields to persist data from URL to Session -->
-                    <input type="hidden" name="token" value="{{ token }}">
-                    <input type="hidden" name="enrollment" value="{{ enrollment }}">
-                    <input type="hidden" name="identity_hash" value="{{ request.GET.hash }}">
-                    <input type="hidden" name="session_token" value="{{ request.GET.session_token }}">
-
-                    <div class="form-group">
-                        <label for="id_name" class="form-label">Full Name</label>
-                        <input 
-                            type="text" 
-                            name="full_name" 
-                            id="id_name" 
-                            class="form-input"
-                            required 
-                            placeholder="Enter your full name"
-                            autocomplete="name"
-                        >
+                <div class="form-group">
+                    <label>Full Name (from ID Card)</label>
+                    <div style="padding: 13px 16px; border: var(--border); border-radius: 10px; background: #F0FFF4; box-shadow: 3px 3px 0px var(--black); font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 18px;">✅</span>
+                        <span id="ocr-name-display">{{ student_name|default:"Not detected" }}</span>
                     </div>
+                    <div class="hint">🪪 Extracted automatically from your ID card via OCR</div>
+                    <input type="hidden" name="full_name" value="{{ student_name }}"> 
+                </div>
+                <div class="form-group">
+                    <label for="id_phone">Phone Number</label>
+                    <input type="tel" name="phone" id="id_phone" required placeholder="10-digit number" pattern="[0-9]{10}" maxlength="10" minlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')" value="{{ prefill_phone }}">
+                    <div class="hint">📱 10 digits, no spaces or dashes</div>
+                </div>
+                <div class="form-group">
+                    <label for="id_email">Email Address</label>
+                    <input type="email" name="email" id="id_email" required placeholder="you@college.edu" autocomplete="email" value="{{ prefill_email }}">
+                </div>
+                <button type="submit" class="submit-btn">Continue → Verify Identity</button>
+            </form>
+        </div>
 
-                    <div class="form-group">
-                        <label for="id_phone" class="form-label">Phone Number</label>
-                        <input 
-                            type="tel" 
-                            name="phone" 
-                            id="id_phone" 
-                            class="form-input"
-                            required 
-                            placeholder="10-digit phone number" 
-                            pattern="[0-9]{10}" 
-                            maxlength="10" 
-                            minlength="10"
-                            autocomplete="tel"
-                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                        >
-                        <div class="input-hint">📱 Enter 10 digits without spaces or dashes</div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="id_email" class="form-label">Email Address</label>
-                        <input 
-                            type="email" 
-                            name="email" 
-                            id="id_email" 
-                            class="form-input"
-                            required 
-                            placeholder="your.email@example.com"
-                            autocomplete="email"
-                        >
-                        <div class="input-hint">📧 We'll send verification to this email</div>
-                    </div>
-
-                    <button type="submit" class="submit-button">
-                        Continue to Selfie
-                    </button>
-                </form>
-            </div>
-
-            <!-- Info Card -->
-            <div class="info-card fade-in-up" style="animation-delay: 0.3s;">
-                <h3 class="info-title">🔒 Privacy Notice</h3>
-                <p class="info-text">
-                    Your information is encrypted and securely stored. We'll never share your details with third parties.
-                </p>
-            </div>
+        <div class="info-card">
+            <div class="info-title">🔒 Privacy Notice</div>
+            <p class="info-text">Your information is encrypted and securely stored. We never share your details.</p>
         </div>
     </div>
 
     <script>
         function validateForm() {
-            const phone = document.getElementById('id_phone').value;
-            const email = document.getElementById('id_email').value;
-            const name = document.getElementById('id_name').value;
-
-            // Validate name
-            if (name.trim().length < 2) {
-                showError('Please enter your full name');
-                return false;
-            }
-
-            // Validate phone
-            if (phone.length !== 10) {
-                showError('Phone number must be exactly 10 digits');
-                return false;
-            }
-
-            // Validate email format
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                showError('Please enter a valid email address');
-                return false;
-            }
-
-            // Haptic feedback on success
-            if ('vibrate' in navigator) {
-                navigator.vibrate([50, 100, 50]);
-            }
-
+            const p = document.getElementById('id_phone').value;
+            const e = document.getElementById('id_email').value;
+            if (p.length !== 10) { alert('⚠️ Phone must be exactly 10 digits'); return false; }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) { alert('⚠️ Enter a valid email'); return false; }
             return true;
         }
-
-        function showError(message) {
-            alert('⚠️ ' + message);
-            
-            // Error haptic
-            if ('vibrate' in navigator) {
-                navigator.vibrate([200, 100, 200]);
-            }
-        }
-
-        // Auto-format phone number as user types
-        const phoneInput = document.getElementById('id_phone');
-        phoneInput.addEventListener('input', function(e) {
-            // Already handled by oninput in HTML, but add visual feedback
-            if (this.value.length === 10) {
-                this.style.borderColor = '#00cc66';
-            } else {
-                this.style.borderColor = '#000';
-            }
-        });
-
-        // Prevent scroll bounce on iOS
-        document.body.addEventListener('touchmove', function(e) {
-            if (!e.target.closest('.main-container')) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-
-        // Auto-focus first input
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(() => {
-                document.getElementById('id_name').focus();
-            }, 500);
-        });
     </script>
 </body>
 </html>

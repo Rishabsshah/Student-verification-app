@@ -70,9 +70,9 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-LOGIN_URL = '/id-verification/'
-LOGIN_REDIRECT_URL = '/dashboard/'
-LOGOUT_REDIRECT_URL = '/id-verification/'
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'   # dashboard view redirects staff → /admin/, students → student dashboard
+LOGOUT_REDIRECT_URL = '/login/'
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -175,6 +175,10 @@ try:
             print("⚠️  WARNING: Using temporary Aadhaar encryption key. Set AADHAAR_ENCRYPTION_KEY in .env for production!")
         else:
             raise ValueError("AADHAAR_ENCRYPTION_KEY must be set in production!")
+
+    # Gemini API key (for ID card authenticity checking)
+    GEMINI_API_KEY = env_config('GEMINI_API_KEY', default=None)
+
 except ImportError:
     # python-decouple not installed, use environment variables directly
     _encryption_key = os.environ.get('AADHAAR_ENCRYPTION_KEY')
@@ -184,6 +188,9 @@ except ImportError:
         from cryptography.fernet import Fernet
         AADHAAR_ENCRYPTION_KEY = Fernet.generate_key()
         print("⚠️  WARNING: Using temporary Aadhaar encryption key.")
+
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', None)
+
 
 # Session configuration for multi-step verification
 SESSION_COOKIE_AGE = 1800  # 30 minutes

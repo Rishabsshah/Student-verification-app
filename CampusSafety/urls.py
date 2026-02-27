@@ -25,7 +25,8 @@ from verification.views import id_verification_page, account_details_page, selfi
 urlpatterns = [
     path("", views.home, name="home"),
     path("admin/", admin.site.urls),
-    path('logout/', auth_views.LogoutView.as_view(next_page='id_verification_page'), name='logout'),
+    path('login/', auth_views.LoginView.as_view(template_name='CampusSafety/login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     path('dashboard/', dashboard, name='dashboard'),
     path('id-verification/', id_verification_page, name='id_verification_page'),
     path('account-details/', account_details_page, name='account_details_page'),

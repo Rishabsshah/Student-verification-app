@@ -24,3 +24,6 @@ python-Levenshtein  # C extension for faster fuzzy matching
 razorpay  # Razorpay payment integration
 cryptography  # For Aadhaar encryption
 python-decouple  # Environment variable management
+
+# AI — Gemini Vision (ID card authenticity check)
+google-genai

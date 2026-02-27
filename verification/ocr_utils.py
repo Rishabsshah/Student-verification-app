@@ -6,6 +6,12 @@ from typing import Optional, Tuple
 
 
 COLLEGE_PATTERNS = {
+    # Thakur
+    "Thakur Polytechnic": r"THAKUR\s*(POLY)?TECHNIC",
+    "Thakur College": r"THAKUR\s*COLLEGE",
+    "Thakur Institute": r"THAKUR\s*INSTITUTE",
+
+
     # Mumbai City
     "A.I. Saboo Siddik Polytechnic": r"SABOO\s*SIDDIK\s*(POLY)?TECHNIC",
     "Government Institute of Printing Technology": r"GOVT.*INSTITUTE.*PRINTING.*TECH",

@@ -3,55 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campus Safety - Dashboard</title>
+    <title>Unified Scholarship — Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #333; }
-        .user-info { background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 20px 0; }
-        .status { padding: 5px 10px; border-radius: 4px; color: white; }
-        .verified { background: #28a745; }
-        .review { background: #ffc107; color: black; }
-        .rejected { background: #dc3545; }
-        .actions { text-align: center; margin-top: 30px; }
-        .actions a { display: inline-block; margin: 0 10px; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; }
-        .actions a:hover { background: #0056b3; }
-        .logout { background: #6c757d; }
-        .logout:hover { background: #545b62; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --black: #111; --white: #fff;
+            --green: #00E676; --lime: #C6F135;
+            --yellow: #FFE500; --red: #FF3535; --orange: #FF6B00;
+            --border: 3px solid var(--black);
+            --shadow: 4px 4px 0px var(--black); --shadow-lg: 6px 6px 0px var(--black);
+        }
+        body { font-family: 'Space Grotesk', sans-serif; background: var(--white); color: var(--black); min-height: 100vh; }
+        body::before { content: ''; position: fixed; inset: 0; background-image: radial-gradient(circle, #111 1px, transparent 1px); background-size: 24px 24px; opacity: 0.05; pointer-events: none; z-index: 0; }
+
+        .top-stripe { background: var(--green); border-bottom: var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 10; }
+        .brand { font-size: 20px; font-weight: 800; letter-spacing: -1px; }
+        .user-pill { background: var(--black); color: var(--green); border-radius: 50px; padding: 6px 14px; font-size: 12px; font-weight: 700; }
+
+        .main { position: relative; z-index: 1; max-width: 520px; margin: 0 auto; padding: 24px 20px 40px; display: flex; flex-direction: column; gap: 16px; }
+
+        /* Welcome */
+        .welcome-card {
+            background: var(--green); border: var(--border); border-radius: 18px;
+            padding: 24px; box-shadow: var(--shadow-lg);
+        }
+        .welcome-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; background: var(--black); color: var(--green); display: inline-block; padding: 4px 12px; border-radius: 50px; margin-bottom: 10px; }
+        .welcome-name { font-size: clamp(28px, 7vw, 38px); font-weight: 800; letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 14px; }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 8px 16px; border: var(--border); border-radius: 50px;
+            font-size: 13px; font-weight: 800; box-shadow: var(--shadow);
+        }
+        .status-badge.verified { background: var(--black); color: var(--green); }
+        .status-badge.review   { background: var(--orange); color: var(--white); }
+        .status-badge.rejected { background: var(--red); color: var(--white); }
+
+        /* Info Card */
+        .info-card { background: var(--white); border: var(--border); border-radius: 16px; padding: 18px; box-shadow: var(--shadow-lg); }
+        .info-card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid #eee; }
+        .info-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 2px dashed #F0F0F0; }
+        .info-row:last-child { border-bottom: none; }
+        .info-key { font-size: 12px; font-weight: 700; color: #777; text-transform: uppercase; letter-spacing: 0.4px; }
+        .info-val { font-size: 14px; font-weight: 800; }
+
+        /* Alert */
+        .alert { border: var(--border); border-radius: 14px; padding: 14px 16px; font-size: 13px; font-weight: 700; box-shadow: var(--shadow); display: flex; gap: 10px; align-items: flex-start; }
+        .alert-icon { font-size: 18px; flex-shrink: 0; }
+        .alert.warning { background: #FFFBCC; }
+        .alert.danger { background: #FFE5E5; color: var(--red); }
+
+        /* Buttons */
+        .actions { display: flex; flex-direction: column; gap: 12px; }
+        .btn {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            padding: 15px 20px; border: var(--border); border-radius: 12px;
+            font-size: 15px; font-weight: 800; font-family: inherit;
+            cursor: pointer; box-shadow: var(--shadow);
+            transition: all 0.12s; text-decoration: none; text-transform: uppercase; letter-spacing: 0.4px;
+        }
+        .btn:hover { transform: translate(-2px,-2px); box-shadow: var(--shadow-lg); }
+        .btn:active { transform: translate(3px,3px); box-shadow: 1px 1px 0 var(--black); }
+        .btn-green { background: var(--green); color: var(--black); }
+        .btn-black { background: var(--black); color: var(--green); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Campus Safety Dashboard</h1>
-        <div class="user-info">
-            <h2>Welcome, {{ user.username }}!</h2>
-            <p><strong>Verification Status:</strong>
-                <span class="status {{ user.verification_status|lower }}">
-                    {{ user.verification_status }}
-                </span>
-            </p>
-            {% if user.enrollment_number %}
-                <p><strong>Enrollment Number:</strong> {{ user.enrollment_number }}</p>
+    <div class="top-stripe">
+        <span class="brand">Scholar Verify</span>
+        <span class="user-pill">@{{ user.username }}</span>
+    </div>
+
+    <div class="main">
+        <!-- Welcome Card -->
+        <div class="welcome-card">
+            <div class="welcome-label">Dashboard</div>
+            <div class="welcome-name">Hey, {{ user.get_full_name|default:user.email }}! 👋</div>
+            {% if user.verification_status == 'VERIFIED' %}
+                <span class="status-badge verified">✓ Verified</span>
+            {% elif user.verification_status == 'REVIEW' %}
+                <span class="status-badge review">⏳ Under Review</span>
+            {% else %}
+                <span class="status-badge rejected">✗ Rejected</span>
             {% endif %}
         </div>
 
+        <!-- Info -->
+        <div class="info-card">
+            <div class="info-card-title">Account Info</div>
+            <div class="info-row">
+                <span class="info-key">Email</span>
+                <span class="info-val">{{ user.email }}</span>
+            </div>
+            {% if user.get_full_name %}
+            <div class="info-row">
+                <span class="info-key">Full Name</span>
+                <span class="info-val">{{ user.get_full_name }}</span>
+            </div>
+            {% endif %}
+            {% if user.enrollment_number %}
+            <div class="info-row">
+                <span class="info-key">Enrollment</span>
+                <span class="info-val">{{ user.enrollment_number }}</span>
+            </div>
+            {% endif %}
+            <div class="info-row">
+                <span class="info-key">Status</span>
+                <span class="info-val">{{ user.verification_status }}</span>
+            </div>
+        </div>
+
+        <!-- Alerts -->
         {% if user.verification_status == 'REVIEW' %}
-            <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 4px; margin: 20px 0;">
-                <strong>Action Required:</strong> Your account is under review. Please upload your student ID for verification.
-            </div>
+        <div class="alert warning">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>Action Required:</strong> Upload your student ID to complete verification.</div>
+        </div>
         {% elif user.verification_status == 'REJECTED' %}
-            <div style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px; margin: 20px 0;">
-                <strong>Verification Failed:</strong> Your ID verification was rejected. Please contact support or try again.
-            </div>
+        <div class="alert danger">
+            <span class="alert-icon">❌</span>
+            <div><strong>Verification Failed:</strong> Please contact support or re-upload your ID.</div>
+        </div>
         {% endif %}
 
+        <!-- Actions -->
         <div class="actions">
             {% if user.verification_status != 'VERIFIED' %}
-                <a href="{% url 'verify_page' %}">Upload Student ID</a>
+            <a href="{% url 'verify_page' %}" class="btn btn-green">📤 Upload Student ID</a>
             {% endif %}
-            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+            <form action="{% url 'logout' %}" method="post" style="margin:0;">
                 {% csrf_token %}
-                <button type="submit" class="logout" style="border:none; cursor:pointer; color:white; padding:10px 20px; border-radius:4px; font-size:16px;">Logout</button>
+                <button type="submit" class="btn btn-black" style="width:100%;">🚪 Logout</button>
             </form>
         </div>
     </div>

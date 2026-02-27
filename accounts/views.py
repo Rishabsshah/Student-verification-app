@@ -92,6 +92,9 @@ class SignupView(CreateView):
 def dashboard(request):
     if not request.user.is_authenticated:
         return redirect('login')
+    # Admins and staff go straight to Django admin panel
+    if request.user.is_staff or request.user.is_superuser:
+        return redirect('/admin/')
     return render(request, 'CampusSafety/dashboard.html', {
         'user': request.user
     })

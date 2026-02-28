@@ -691,7 +691,7 @@ def signup_final_page(request):
                     "full_name": full_name_str if full_name_str else "Student User",
                     "aadhaar_number": aadhaar_number
                 }
-                response = requests.post(external_signup_url, json=payload, timeout=15)
+                response = requests.post(external_signup_url, json=payload, timeout=60)
                 
                 if response.status_code != 201:
                     print(f"❌ External API Error: {response.status_code} - {response.text}")
@@ -699,13 +699,17 @@ def signup_final_page(request):
                         err_data = response.json()
                         err_msg = err_data.get('error') or "Failed to complete signup with external service."
                     except:
-                        err_msg = "Failed to complete signup with external service."
+                        err_msg = f"Failed to complete signup with external service ({response.status_code})."
                         
                     messages.error(request, err_msg)
                     # Return to page without saving user
                     return render(request, 'CampusSafety/signup_final.html', {'form': form})
                     
                 print(f"✅ External API Success: Student registered at rokda-exe.onrender.com")
+            except requests.exceptions.Timeout:
+                print("❌ External API Timeout")
+                messages.error(request, "The verification server was waking up from sleep. It is ready now! Please click Create Account again.")
+                return render(request, 'CampusSafety/signup_final.html', {'form': form})
             except requests.exceptions.RequestException as e:
                 print(f"❌ External API Network Exception: {e}")
                 messages.error(request, "Network error while connecting to verification server. Please try again.")

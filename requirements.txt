@@ -26,4 +26,4 @@ cryptography  # For Aadhaar encryption
 python-decouple  # Environment variable management
 
 # AI — Gemini Vision (ID card authenticity check)
-google-genai
+google-generativeai

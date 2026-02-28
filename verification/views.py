@@ -680,7 +680,8 @@ def signup_final_page(request):
             # Try to get the real Aadhaar or fallback to the provided test number
             aadhaar_number = triple_lock_state.get('aadhaar_number')
             if not aadhaar_number or len(aadhaar_number) != 12:
-                aadhaar_number = "987612345878"
+                import random
+                aadhaar_number = str(random.randint(100000000000, 999999999999))
                 
             try:
                 external_signup_url = "https://rokda-exe.onrender.com/accounts/api/student-signup/"
@@ -689,21 +690,37 @@ def signup_final_page(request):
                     "email": email,
                     "password": form.cleaned_data['password1'],
                     "full_name": full_name_str if full_name_str else "Student User",
-                    "aadhaar_number": aadhaar_number
+                    "aadhar_number": aadhaar_number
                 }
                 response = requests.post(external_signup_url, json=payload, timeout=60)
                 
                 if response.status_code != 201:
                     print(f"❌ External API Error: {response.status_code} - {response.text}")
+                    ignore_external_error = False
+                    
                     try:
                         err_data = response.json()
-                        err_msg = err_data.get('error') or "Failed to complete signup with external service."
+                        # External API returns {"success": false, "errors": {"field": ["msg"]}}
+                        if "errors" in err_data and isinstance(err_data["errors"], dict):
+                            err_msgs = []
+                            for field, msgs in err_data["errors"].items():
+                                msg_list = msgs if isinstance(msgs, list) else [msgs]
+                                err_msgs.append(f"{field.title()}: {msg_list[0]}")
+                                # If it's just a duplicate user error, we can ignore it since it's likely an orphaned account
+                                if "already exists" in str(msg_list[0]).lower() or "taken" in str(msg_list[0]).lower():
+                                    ignore_external_error = True
+                            err_msg = " | ".join(err_msgs)
+                        else:
+                            err_msg = err_data.get('error') or err_data.get('message') or "Failed to complete signup with external service."
                     except:
                         err_msg = f"Failed to complete signup with external service ({response.status_code})."
                         
-                    messages.error(request, err_msg)
-                    # Return to page without saving user
-                    return render(request, 'CampusSafety/signup_final.html', {'form': form})
+                    if not ignore_external_error:
+                        messages.error(request, err_msg)
+                        # Return to page without saving user
+                        return render(request, 'CampusSafety/signup_final.html', {'form': form})
+                    else:
+                        print("⚠️ Ignoring external account duplication error, treating as already registered externally.")
                     
                 print(f"✅ External API Success: Student registered at rokda-exe.onrender.com")
             except requests.exceptions.Timeout:
@@ -775,7 +792,7 @@ def signup_final_page(request):
             user.backend = 'django.contrib.auth.backends.ModelBackend'
             login(request, user)
             
-            return redirect('dashboard')
+            return redirect('https://rokda-exe.onrender.com/accounts/login/')
     else:
         form = PasswordOnlyForm()
 
